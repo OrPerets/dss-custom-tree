@@ -4,7 +4,7 @@
   "meta" : {
     "label" : "Employee Org Tree Editor",
     "description" : "Visualize and edit employee reporting hierarchies in Dataiku DSS",
-    "author" : "Dataiku (Créml Brûlée)",
+    "author" : "Or Peretz",
     "supportLevel": "TIER2_SUPPORT",
     "icon" : "icon-sitemap",
     "licenseInfo" : "Apache Software License",
