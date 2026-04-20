@@ -1,0 +1,9 @@
+manager_id,max_direct_reports,allowed_departments,allowed_locations,min_child_level,max_child_level,rule_note
+E001,4,Executive|Engineering|Sales|People,Tel Aviv|London|New York|Remote,L2,L3,CEO should only manage executive leaders
+E002,3,Engineering|Data,Tel Aviv|Haifa|Remote,L3,L4,VP Engineering can manage engineering and data teams
+E003,3,Sales,London|Berlin|Remote,L3,L5,Sales leaders only manage sales roles
+E004,2,People,New York|Remote,L3,L4,People leaders only manage people roles
+E005,3,Engineering|Data,Tel Aviv|Haifa|Remote,L4,L5,Engineering manager for platform and data contributors
+E006,2,Engineering|Data,Haifa|Remote,L4,L5,Engineering manager for data platform team
+E010,3,Sales,London|Berlin|Remote,L4,L5,Sales manager scope rule
+E013,2,People,New York|Remote,L4,L5,People Ops manager is already at capacity

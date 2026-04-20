@@ -1,0 +1,34 @@
+{
+  "name": "dataiku-plugin-developer",
+  "version": "0.1.0",
+  "description": "Skills and checks for building professional Dataiku DSS plugins, with strong support for webapp components.",
+  "author": {
+    "name": "Or Perets"
+  },
+  "license": "UNLICENSED",
+  "keywords": [
+    "dataiku",
+    "dss",
+    "plugin-development",
+    "webapp",
+    "developer-tools"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Dataiku Plugin Developer",
+    "shortDescription": "Build, review, and package professional Dataiku DSS plugins.",
+    "longDescription": "A focused Codex plugin for creating Dataiku DSS plugins, especially webapp plugins, with official workflow guidance, best-practice checks, and a local verifier script.",
+    "developerName": "Or Perets",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Scaffold a Dataiku DSS webapp plugin in this repo.",
+      "Review this Dataiku plugin for upload readiness.",
+      "Add a code env and packaging checklist to this plugin."
+    ],
+    "brandColor": "#2F6B4F"
+  }
+}

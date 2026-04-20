@@ -1,0 +1,14 @@
+{
+  "id" : "employee-org-tree-visualizer",
+  "version" : "2.0.0",
+  "meta" : {
+    "label" : "Employee Org Tree Editor",
+    "description" : "Visualize and edit employee reporting hierarchies in Dataiku DSS",
+    "author" : "Dataiku (Créml Brûlée)",
+    "supportLevel": "TIER2_SUPPORT",
+    "icon" : "icon-sitemap",
+    "licenseInfo" : "Apache Software License",
+    "tags" : ["HR", "Visualization"],
+    "category": "Visualization"
+  }
+}

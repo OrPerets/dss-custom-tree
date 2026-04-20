@@ -1,0 +1,6 @@
+{
+  "installCorePackages": true,
+  "installJupyterSupport": false,
+  "basePackagesInstallMethod": "PRE_BUILT",
+  "conda": false
+}

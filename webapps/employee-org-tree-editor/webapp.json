@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "label": "Employee org tree editor",
+    "description": "Load and validate employee hierarchy datasets before entering the org-tree workspace",
+    "icon": "icon-sitemap"
+  },
+
+  "hideWebAppConfig": false,
+  "baseType": "STANDARD",
+  "standardWebAppLibraries": ["dataiku", "font_awesome"],
+  "hasBackend": "true",
+  "noJSSecurity": "true",
+
+  "params": [
+    {
+      "type": "SEPARATOR",
+      "label": "Default datasets"
+    },
+    {
+      "name": "default_employee_dataset",
+      "type": "DATASET",
+      "label": "Default employee dataset",
+      "mandatory": false
+    },
+    {
+      "name": "default_constraints_dataset",
+      "type": "DATASET",
+      "label": "Default constraints dataset",
+      "mandatory": false
+    },
+    {
+      "type": "SEPARATOR",
+      "label": "Optional persistence"
+    },
+    {
+      "name": "snapshot_folder",
+      "type": "FOLDER",
+      "label": "Snapshot folder",
+      "mandatory": false
+    }
+  ]
+}

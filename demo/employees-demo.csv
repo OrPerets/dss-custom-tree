@@ -1,0 +1,16 @@
+employee_id,manager_id,full_name,job_title,department,location,level,employment_status,email,team_name,photo_url,start_date,max_direct_reports,can_be_manager,sort_order
+E001,,Nora Levin,CEO,Executive,Tel Aviv,L1,active,nora.levin@example.com,Executive,,2018-01-15,4,true,1
+E002,E001,Amir Cohen,VP Engineering,Engineering,Tel Aviv,L2,active,amir.cohen@example.com,Engineering,,2019-03-01,3,true,1
+E003,E001,Maya Azulay,VP Sales,Sales,London,L2,active,maya.azulay@example.com,Sales,,2019-05-10,3,true,2
+E004,E001,Yael Ben-David,VP People,People,New York,L2,active,yael.bendavid@example.com,People,,2020-02-20,2,true,3
+E005,E002,Daniel Katz,Engineering Manager,Engineering,Tel Aviv,L3,active,daniel.katz@example.com,Platform,,2020-08-16,3,true,1
+E006,E002,Lior Shani,Engineering Manager,Engineering,Haifa,L3,active,lior.shani@example.com,Data Platform,,2021-01-12,2,true,2
+E007,E005,Roni Sela,Senior Backend Engineer,Engineering,Tel Aviv,L4,active,roni.sela@example.com,Platform,,2021-11-01,,false,1
+E008,E005,Gal Mor,Frontend Engineer,Engineering,Tel Aviv,L4,active,gal.mor@example.com,Platform,,2022-04-04,,false,2
+E009,E006,Tomer Niv,Data Engineer,Data,Haifa,L4,active,tomer.niv@example.com,Data Platform,,2022-06-13,,false,1
+E010,E003,Shira Azul,Sales Manager,Sales,London,L3,active,shira.azul@example.com,Enterprise Sales,,2020-09-07,2,true,1
+E011,E010,Noam Bar,Account Executive,Sales,London,L4,active,noam.bar@example.com,Enterprise Sales,,2022-01-19,,false,1
+E012,E010,Adi Klein,Sales Development Rep,Sales,Berlin,L5,active,adi.klein@example.com,SDR,,2023-02-27,,false,2
+E013,E004,Ella Peleg,People Ops Manager,People,New York,L3,active,ella.peleg@example.com,People Ops,,2021-03-22,2,true,1
+E014,E013,Omer Tzur,Recruiter,People,New York,L4,active,omer.tzur@example.com,Talent,,2023-01-09,,false,1
+E015,E013,Dana Levi,HRBP,People,Remote,L4,active,dana.levi@example.com,People Ops,,2022-10-03,,false,2

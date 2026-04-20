@@ -1,0 +1,12 @@
+{
+  "python": [
+    {
+      "name": "pandas",
+      "version": ">=2,<3"
+    },
+    {
+      "name": "python-dateutil",
+      "version": ">=2.8,<3"
+    }
+  ]
+}
