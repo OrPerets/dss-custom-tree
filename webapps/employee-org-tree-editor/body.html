@@ -69,59 +69,75 @@
                 </div>
             </div>
 
-            <div class="workspace__filters">
-                <div class="details-card details-card--filters">
-                    <div class="details-card__header">
+            <div class="workspace__filters" ng-class="{'workspace__filters--expanded': state.ui.filtersExpanded}">
+                <div class="details-card details-card--filters collapsible-panel">
+                    <div class="details-card__header filters-header collapsible-panel__header">
                         <div>
                             <p class="section-label">Filters</p>
                             <h3>Refine tree</h3>
+                            <p class="collapsible-summary">{{getFilterSummaryLabel()}}</p>
                         </div>
-                        <button type="button" class="text-button text-button--muted" ng-click="resetFilters()">Reset</button>
+                        <div class="filters-header__actions">
+                            <button type="button"
+                                    class="text-button text-button--muted"
+                                    ng-if="getActiveFilterCount()"
+                                    ng-click="resetFilters()">
+                                Reset
+                            </button>
+                            <button type="button"
+                                    class="secondary-button menu-toggle"
+                                    ng-click="toggleFilters()"
+                                    ng-attr-aria-expanded="{{state.ui.filtersExpanded}}">
+                                {{state.ui.filtersExpanded ? "Hide filters" : "Show filters"}}
+                            </button>
+                        </div>
                     </div>
 
-                    <label class="field">
-                        <span class="field__label">Search employees</span>
-                        <input type="search"
-                               placeholder="Name, employee ID, or title"
-                               ng-model="state.filters.search"
-                               ng-model-options="{ debounce: 120 }"
-                               ng-change="applyFilters()">
-                    </label>
+                    <div class="filters-grid" ng-show="state.ui.filtersExpanded">
+                        <label class="field">
+                            <span class="field__label">Search employees</span>
+                            <input type="search"
+                                   placeholder="Name, employee ID, or title"
+                                   ng-model="state.filters.search"
+                                   ng-model-options="{ debounce: 120 }"
+                                   ng-change="applyFilters()">
+                        </label>
 
-                    <label class="field">
-                        <span class="field__label">Department</span>
-                        <select ng-model="state.filters.department" ng-change="applyFilters()">
-                            <option value="">All departments</option>
-                            <option ng-repeat="department in state.filterOptions.departments track by department" value="{{department}}">
-                                {{department}}
-                            </option>
-                        </select>
-                    </label>
+                        <label class="field">
+                            <span class="field__label">Department</span>
+                            <select ng-model="state.filters.department" ng-change="applyFilters()">
+                                <option value="">All departments</option>
+                                <option ng-repeat="department in state.filterOptions.departments track by department" value="{{department}}">
+                                    {{department}}
+                                </option>
+                            </select>
+                        </label>
 
-                    <label class="field">
-                        <span class="field__label">Location</span>
-                        <select ng-model="state.filters.location" ng-change="applyFilters()">
-                            <option value="">All locations</option>
-                            <option ng-repeat="location in state.filterOptions.locations track by location" value="{{location}}">
-                                {{location}}
-                            </option>
-                        </select>
-                    </label>
+                        <label class="field">
+                            <span class="field__label">Location</span>
+                            <select ng-model="state.filters.location" ng-change="applyFilters()">
+                                <option value="">All locations</option>
+                                <option ng-repeat="location in state.filterOptions.locations track by location" value="{{location}}">
+                                    {{location}}
+                                </option>
+                            </select>
+                        </label>
 
-                    <label class="field">
-                        <span class="field__label">Status</span>
-                        <select ng-model="state.filters.status" ng-change="applyFilters()">
-                            <option value="">All statuses</option>
-                            <option ng-repeat="status in state.filterOptions.statuses track by status" value="{{status}}">
-                                {{status}}
-                            </option>
-                        </select>
-                    </label>
+                        <label class="field">
+                            <span class="field__label">Status</span>
+                            <select ng-model="state.filters.status" ng-change="applyFilters()">
+                                <option value="">All statuses</option>
+                                <option ng-repeat="status in state.filterOptions.statuses track by status" value="{{status}}">
+                                    {{status}}
+                                </option>
+                            </select>
+                        </label>
 
-                    <label class="toggle-field toggle-field--sidebar">
-                        <input type="checkbox" ng-model="state.filters.onlyWarnings" ng-change="applyFilters()">
-                        <span>Warnings only</span>
-                    </label>
+                        <label class="toggle-field toggle-field--sidebar">
+                            <input type="checkbox" ng-model="state.filters.onlyWarnings" ng-change="applyFilters()">
+                            <span>Warnings only</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -322,24 +338,25 @@
             </div>
 
             <div class="workspace__session" ng-class="{'workspace__session--expanded': state.ui.sessionExpanded}">
-                <div class="details-card details-card--session">
-                    <div class="details-card__header session-header">
+                <div class="details-card details-card--session collapsible-panel">
+                    <div class="details-card__header session-header collapsible-panel__header">
                         <div>
                             <p class="section-label">Session</p>
                             <h3>{{getPendingMovesLabel()}}</h3>
+                            <p class="collapsible-summary">Last saved: {{getLastSavedLabel()}}</p>
                         </div>
                         <div class="session-header__actions">
                             <button type="button"
                                     class="text-button text-button--muted"
-                                    ng-if="state.lastSavedPayload"
+                                    ng-if="state.ui.sessionExpanded && state.lastSavedPayload"
                                     ng-click="resetUnsavedMoves()">
                                 Restore baseline
                             </button>
                             <button type="button"
-                                    class="secondary-button session-toggle"
+                                    class="secondary-button session-toggle menu-toggle"
                                     ng-click="toggleSession()"
                                     ng-attr-aria-expanded="{{state.ui.sessionExpanded}}">
-                                {{state.ui.sessionExpanded ? "Collapse" : "Session details"}}
+                                {{state.ui.sessionExpanded ? "Hide session" : "Show session"}}
                             </button>
                         </div>
                     </div>

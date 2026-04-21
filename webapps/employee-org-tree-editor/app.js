@@ -49,6 +49,7 @@
             },
             filters: defaultFilters(),
             ui: {
+                filtersExpanded: false,
                 sessionExpanded: false
             },
             drag: defaultDragState(),
@@ -273,6 +274,49 @@
         $scope.resetFilters = function() {
             $scope.state.filters = defaultFilters();
             rebuildDiagram(true);
+        };
+
+        $scope.toggleFilters = function() {
+            $scope.state.ui.filtersExpanded = !$scope.state.ui.filtersExpanded;
+            $timeout(function() {
+                attachViewport();
+                fitDiagramToViewport();
+            });
+        };
+
+        $scope.getActiveFilterCount = function() {
+            return countActiveFilters($scope.state.filters);
+        };
+
+        $scope.getFilterSummaryLabel = function() {
+            var filters = $scope.state.filters || defaultFilters();
+            var labels = [];
+
+            if (filters.search && filters.search.trim()) {
+                labels.push("Search: " + filters.search.trim());
+            }
+            if (filters.department) {
+                labels.push("Department: " + filters.department);
+            }
+            if (filters.location) {
+                labels.push("Location: " + filters.location);
+            }
+            if (filters.status) {
+                labels.push("Status: " + filters.status);
+            }
+            if (filters.onlyWarnings) {
+                labels.push("Warnings only");
+            }
+
+            if (!labels.length) {
+                return "No active filters";
+            }
+
+            if (labels.length > 2) {
+                return labels.slice(0, 2).join(" / ") + " / +" + (labels.length - 2) + " more";
+            }
+
+            return labels.join(" / ");
         };
 
         $scope.resetUnsavedMoves = function() {
@@ -733,13 +777,30 @@
         }
 
         function hasActiveFilters(filters) {
-            return !!(
-                (filters.search && filters.search.trim()) ||
-                filters.department ||
-                filters.location ||
-                filters.status ||
-                filters.onlyWarnings
-            );
+            return countActiveFilters(filters) > 0;
+        }
+
+        function countActiveFilters(filters) {
+            var currentFilters = filters || defaultFilters();
+            var count = 0;
+
+            if (currentFilters.search && currentFilters.search.trim()) {
+                count += 1;
+            }
+            if (currentFilters.department) {
+                count += 1;
+            }
+            if (currentFilters.location) {
+                count += 1;
+            }
+            if (currentFilters.status) {
+                count += 1;
+            }
+            if (currentFilters.onlyWarnings) {
+                count += 1;
+            }
+
+            return count;
         }
 
         function nodeMatchesFilters(node, filters) {
