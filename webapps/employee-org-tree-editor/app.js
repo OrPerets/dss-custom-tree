@@ -2,7 +2,7 @@
     "use strict";
 
     var NODE_WIDTH = 264;
-    var NODE_HEIGHT = 176;
+    var NODE_HEIGHT = 184;
     var HORIZONTAL_GAP = 76;
     var VERTICAL_GAP = 144;
     var DIAGRAM_PADDING = 68;

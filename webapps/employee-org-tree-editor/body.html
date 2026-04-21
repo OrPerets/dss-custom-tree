@@ -199,21 +199,28 @@
                                             <div>
                                                 <div class="org-node__name">{{renderNode.data.full_name}}</div>
                                                 <div class="org-node__title">{{renderNode.data.job_title}}</div>
+                                                <div class="org-node__id">{{renderNode.data.employee_id}}</div>
                                             </div>
                                         </div>
 
                                         <div class="org-node__meta">
-                                            <span>{{renderNode.data.location}}</span>
-                                            <span>{{renderNode.data.level}}</span>
+                                            <span class="org-node__meta-item">
+                                                <span class="org-node__meta-label">Location</span>
+                                                <span>{{renderNode.data.location}}</span>
+                                            </span>
+                                            <span class="org-node__meta-item">
+                                                <span class="org-node__meta-label">Level</span>
+                                                <span>{{renderNode.data.level}}</span>
+                                            </span>
                                         </div>
 
                                         <div class="org-node__signals" ng-if="renderNode.data.manager_rule || renderNode.data.warnings.length">
-                                            <span class="node-badge node-badge--rule" ng-if="renderNode.data.manager_rule">Rule</span>
+                                            <span class="node-badge node-badge--rule" ng-if="renderNode.data.manager_rule">Mgr rule</span>
                                             <span class="node-badge node-badge--warning" ng-if="renderNode.data.warnings.length">{{getWarningCountLabel(renderNode.data)}}</span>
                                         </div>
 
                                         <div class="org-node__footer">
-                                            <span>{{renderNode.data.warnings.length ? "Needs review" : "Ready to move"}}</span>
+                                            <span class="org-node__readiness">{{renderNode.data.warnings.length ? "Needs review" : "Move ready"}}</span>
                                             <span class="capacity-pill" ng-class="getCapacityTone(renderNode.data)">
                                                 {{getCapacityLabel(renderNode.data)}}
                                             </span>
