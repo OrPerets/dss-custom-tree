@@ -1176,10 +1176,10 @@
             }
 
             if ($scope.state.ui.filtersExpanded) {
-                $scope.state.ui.filtersMenuStyle = buildDropdownStyle(".workspace__filters", 820, 620);
+                $scope.state.ui.filtersMenuStyle = buildDropdownStyle(".workspace__filters .menu-toggle", 560, 520);
             }
             if ($scope.state.ui.sessionExpanded) {
-                $scope.state.ui.sessionMenuStyle = buildDropdownStyle(".workspace__session", 940, 660);
+                $scope.state.ui.sessionMenuStyle = buildDropdownStyle(".workspace__session .menu-toggle", 620, 620);
             }
         }
 
@@ -1196,11 +1196,13 @@
                 : { bottom: margin, right: viewportWidth - margin };
             var maxLeft = Math.max(margin, viewportWidth - margin - width);
             var left = clamp(anchorRect.right - width, margin, maxLeft);
-            var top = Math.max(margin, anchorRect.bottom + 8);
+            var anchorCenter = anchorRect.left + (anchorRect.width / 2);
+            var originX = clamp(((anchorCenter - left) / width) * 100, 12, 88);
+            var top = Math.max(margin, anchorRect.bottom + 10);
             var availableHeight = viewportHeight - top - margin;
 
             if (availableHeight < 220) {
-                top = margin;
+                top = Math.max(margin, anchorRect.top - preferredMaxHeight - 10);
                 availableHeight = viewportHeight - top - margin;
             }
 
@@ -1208,7 +1210,8 @@
                 top: Math.round(top) + "px",
                 left: Math.round(left) + "px",
                 width: Math.round(width) + "px",
-                maxHeight: Math.round(Math.max(180, Math.min(preferredMaxHeight, availableHeight))) + "px"
+                maxHeight: Math.round(Math.max(180, Math.min(preferredMaxHeight, availableHeight))) + "px",
+                transformOrigin: Math.round(originX) + "% top"
             };
         }
 
