@@ -70,75 +70,91 @@
 
                 <div class="workspace__menus">
                     <div class="workspace__menu workspace__filters" ng-class="{'workspace__filters--expanded': state.ui.filtersExpanded}">
-                <div class="details-card details-card--filters collapsible-panel">
-                    <div class="details-card__header filters-header collapsible-panel__header">
-                        <div>
-                            <p class="section-label">Filters</p>
-                            <h3>Refine tree</h3>
-                            <p class="collapsible-summary">{{getFilterSummaryLabel()}}</p>
+                        <div class="details-card details-card--filters collapsible-panel">
+                            <div class="details-card__header filters-header collapsible-panel__header">
+                                <div>
+                                    <p class="section-label">Filters</p>
+                                    <h3>Refine tree</h3>
+                                    <p class="collapsible-summary">{{getFilterSummaryLabel()}}</p>
+                                </div>
+                                <div class="filters-header__actions">
+                                    <button type="button"
+                                            class="secondary-button menu-toggle"
+                                            ng-click="toggleFilters()"
+                                            aria-haspopup="true"
+                                            aria-controls="filters-dropdown-panel"
+                                            ng-attr-aria-expanded="{{state.ui.filtersExpanded}}">
+                                        {{state.ui.filtersExpanded ? "Hide filters" : "Show filters"}}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="filters-header__actions">
-                            <button type="button"
-                                    class="text-button text-button--muted"
-                                    ng-if="getActiveFilterCount()"
-                                    ng-click="resetFilters()">
-                                Reset
-                            </button>
-                            <button type="button"
-                                    class="secondary-button menu-toggle"
-                                    ng-click="toggleFilters()"
-                                    ng-attr-aria-expanded="{{state.ui.filtersExpanded}}">
-                                {{state.ui.filtersExpanded ? "Hide filters" : "Show filters"}}
-                            </button>
+
+                        <div id="filters-dropdown-panel"
+                             class="filters-grid dropdown-panel"
+                             role="region"
+                             aria-label="Tree filters"
+                             ng-show="state.ui.filtersExpanded"
+                             ng-style="state.ui.filtersMenuStyle">
+                            <div class="filters-overlay-header">
+                                <div>
+                                    <p class="section-label">Filters</p>
+                                    <h4>Refine visible employees</h4>
+                                </div>
+                                <button type="button"
+                                        class="text-button text-button--muted"
+                                        ng-if="getActiveFilterCount()"
+                                        ng-click="resetFilters()">
+                                    Reset filters
+                                </button>
+                            </div>
+
+                            <div class="filters-controls-grid">
+                                <label class="field">
+                                    <span class="field__label">Search employees</span>
+                                    <input type="search"
+                                           placeholder="Name, employee ID, or title"
+                                           ng-model="state.filters.search"
+                                           ng-model-options="{ debounce: 120 }"
+                                           ng-change="applyFilters()">
+                                </label>
+
+                                <label class="field">
+                                    <span class="field__label">Department</span>
+                                    <select ng-model="state.filters.department" ng-change="applyFilters()">
+                                        <option value="">All departments</option>
+                                        <option ng-repeat="department in state.filterOptions.departments track by department" value="{{department}}">
+                                            {{department}}
+                                        </option>
+                                    </select>
+                                </label>
+
+                                <label class="field">
+                                    <span class="field__label">Location</span>
+                                    <select ng-model="state.filters.location" ng-change="applyFilters()">
+                                        <option value="">All locations</option>
+                                        <option ng-repeat="location in state.filterOptions.locations track by location" value="{{location}}">
+                                            {{location}}
+                                        </option>
+                                    </select>
+                                </label>
+
+                                <label class="field">
+                                    <span class="field__label">Status</span>
+                                    <select ng-model="state.filters.status" ng-change="applyFilters()">
+                                        <option value="">All statuses</option>
+                                        <option ng-repeat="status in state.filterOptions.statuses track by status" value="{{status}}">
+                                            {{status}}
+                                        </option>
+                                    </select>
+                                </label>
+
+                                <label class="toggle-field toggle-field--sidebar">
+                                    <input type="checkbox" ng-model="state.filters.onlyWarnings" ng-change="applyFilters()">
+                                    <span>Warnings only</span>
+                                </label>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="filters-grid" ng-show="state.ui.filtersExpanded">
-                        <label class="field">
-                            <span class="field__label">Search employees</span>
-                            <input type="search"
-                                   placeholder="Name, employee ID, or title"
-                                   ng-model="state.filters.search"
-                                   ng-model-options="{ debounce: 120 }"
-                                   ng-change="applyFilters()">
-                        </label>
-
-                        <label class="field">
-                            <span class="field__label">Department</span>
-                            <select ng-model="state.filters.department" ng-change="applyFilters()">
-                                <option value="">All departments</option>
-                                <option ng-repeat="department in state.filterOptions.departments track by department" value="{{department}}">
-                                    {{department}}
-                                </option>
-                            </select>
-                        </label>
-
-                        <label class="field">
-                            <span class="field__label">Location</span>
-                            <select ng-model="state.filters.location" ng-change="applyFilters()">
-                                <option value="">All locations</option>
-                                <option ng-repeat="location in state.filterOptions.locations track by location" value="{{location}}">
-                                    {{location}}
-                                </option>
-                            </select>
-                        </label>
-
-                        <label class="field">
-                            <span class="field__label">Status</span>
-                            <select ng-model="state.filters.status" ng-change="applyFilters()">
-                                <option value="">All statuses</option>
-                                <option ng-repeat="status in state.filterOptions.statuses track by status" value="{{status}}">
-                                    {{status}}
-                                </option>
-                            </select>
-                        </label>
-
-                        <label class="toggle-field toggle-field--sidebar">
-                            <input type="checkbox" ng-model="state.filters.onlyWarnings" ng-change="applyFilters()">
-                            <span>Warnings only</span>
-                        </label>
-                    </div>
-                </div>
                     </div>
 
                     <div class="workspace__menu workspace__session" ng-class="{'workspace__session--expanded': state.ui.sessionExpanded}">
@@ -152,101 +168,108 @@
                                     <button type="button"
                                             class="secondary-button session-toggle menu-toggle"
                                             ng-click="toggleSession()"
+                                            aria-haspopup="true"
+                                            aria-controls="session-dropdown-panel"
                                             ng-attr-aria-expanded="{{state.ui.sessionExpanded}}">
                                         {{state.ui.sessionExpanded ? "Hide session" : "Show session"}}
                                     </button>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="session-grid" ng-show="state.ui.sessionExpanded">
-                                <div class="session-overlay-header">
+                        <div id="session-dropdown-panel"
+                             class="session-grid dropdown-panel"
+                             role="region"
+                             aria-label="Session details"
+                             ng-show="state.ui.sessionExpanded"
+                             ng-style="state.ui.sessionMenuStyle">
+                            <div class="session-overlay-header">
+                                <div>
+                                    <p class="section-label">Session details</p>
+                                    <h4>Workspace state</h4>
+                                </div>
+                                <button type="button"
+                                        class="text-button text-button--muted"
+                                        ng-if="state.lastSavedPayload"
+                                        ng-click="resetUnsavedMoves()">
+                                    Restore baseline
+                                </button>
+                            </div>
+
+                            <div class="session-block">
+                                <div class="metric-list metric-list--session">
+                                    <div class="metric-item metric-item--count">
+                                        <span>Matched</span>
+                                        <strong>{{state.diagram.matchedCount}}</strong>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span>Last saved</span>
+                                        <strong>{{getLastSavedLabel()}}</strong>
+                                    </div>
+                                    <div class="metric-item" ng-if="state.lastSavedSnapshot && state.lastSavedSnapshot.saved_at">
+                                        <span>Saved at</span>
+                                        <strong>{{state.lastSavedSnapshot.saved_at}}</strong>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span>Employees source</span>
+                                        <strong>{{state.treePayload.meta.source.employee_dataset}}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="session-block">
+                                <p class="section-label">Recent moves</p>
+                                <ul class="change-log change-log--inline" ng-if="state.treePayload.change_log.length">
+                                    <li class="change-log__entry" ng-repeat="entry in state.treePayload.change_log | limitTo:3 track by $index">
+                                        <strong>{{entry.employee_name}}</strong>
+                                        <span>{{entry.old_manager_name || entry.old_manager_id || "Root"}} -> {{entry.new_manager_name}}</span>
+                                    </li>
+                                </ul>
+                                <p class="empty-note empty-note--session" ng-if="!state.treePayload.change_log.length">Accepted manager changes will appear here.</p>
+                            </div>
+
+                            <div class="session-block" ng-if="canUseSnapshotStorage()">
+                                <div class="details-card__header details-card__header--session">
                                     <div>
-                                        <p class="section-label">Session details</p>
-                                        <h4>Workspace state</h4>
+                                        <p class="section-label">Baselines</p>
+                                        <h4>Saved snapshots</h4>
                                     </div>
-                                    <button type="button"
-                                            class="text-button text-button--muted"
-                                            ng-if="state.lastSavedPayload"
-                                            ng-click="resetUnsavedMoves()">
-                                        Restore baseline
-                                    </button>
+                                    <span class="state-chip" ng-if="state.snapshotsLoading">Refreshing</span>
                                 </div>
 
-                                <div class="session-block">
-                                    <div class="metric-list metric-list--session">
-                                        <div class="metric-item metric-item--count">
-                                            <span>Matched</span>
-                                            <strong>{{state.diagram.matchedCount}}</strong>
-                                        </div>
-                                        <div class="metric-item">
-                                            <span>Last saved</span>
-                                            <strong>{{getLastSavedLabel()}}</strong>
-                                        </div>
-                                        <div class="metric-item" ng-if="state.lastSavedSnapshot && state.lastSavedSnapshot.saved_at">
-                                            <span>Saved at</span>
-                                            <strong>{{state.lastSavedSnapshot.saved_at}}</strong>
-                                        </div>
-                                        <div class="metric-item">
-                                            <span>Employees source</span>
-                                            <strong>{{state.treePayload.meta.source.employee_dataset}}</strong>
-                                        </div>
+                                <div class="session-actions">
+                                    <label class="field field--compact session-field">
+                                        <span class="field__label">Snapshot</span>
+                                        <select ng-model="state.selectedSnapshotPath" ng-disabled="!state.snapshotOptions.length">
+                                            <option value="">Select a snapshot</option>
+                                            <option ng-repeat="snapshot in state.snapshotOptions track by snapshot.path" value="{{snapshot.path}}">
+                                                {{snapshot.name}} ({{snapshot.saved_at}})
+                                            </option>
+                                        </select>
+                                    </label>
+
+                                    <div class="button-row button-row--tight session-button-row">
+                                        <button type="button"
+                                                class="secondary-button"
+                                                ng-click="loadSnapshot()"
+                                                ng-disabled="state.snapshotLoading || !state.selectedSnapshotPath">
+                                            {{state.snapshotLoading ? "Loading..." : "Load"}}
+                                        </button>
+                                        <button type="button"
+                                                class="secondary-button"
+                                                ng-click="saveSnapshot()"
+                                                ng-disabled="state.snapshotSaving || !state.treePayload">
+                                            {{state.snapshotSaving ? "Saving..." : "Save current"}}
+                                        </button>
                                     </div>
                                 </div>
 
-                                <div class="session-block">
-                                    <p class="section-label">Recent moves</p>
-                                    <ul class="change-log change-log--inline" ng-if="state.treePayload.change_log.length">
-                                        <li class="change-log__entry" ng-repeat="entry in state.treePayload.change_log | limitTo:3 track by $index">
-                                            <strong>{{entry.employee_name}}</strong>
-                                            <span>{{entry.old_manager_name || entry.old_manager_id || "Root"}} -> {{entry.new_manager_name}}</span>
-                                        </li>
-                                    </ul>
-                                    <p class="empty-note empty-note--session" ng-if="!state.treePayload.change_log.length">Accepted manager changes will appear here.</p>
-                                </div>
+                                <p class="empty-note" ng-if="!state.snapshotOptions.length">No saved baselines yet for this source.</p>
+                            </div>
 
-                                <div class="session-block" ng-if="canUseSnapshotStorage()">
-                                    <div class="details-card__header details-card__header--session">
-                                        <div>
-                                            <p class="section-label">Baselines</p>
-                                            <h4>Saved snapshots</h4>
-                                        </div>
-                                        <span class="state-chip" ng-if="state.snapshotsLoading">Refreshing</span>
-                                    </div>
-
-                                    <div class="session-actions">
-                                        <label class="field field--compact session-field">
-                                            <span class="field__label">Snapshot</span>
-                                            <select ng-model="state.selectedSnapshotPath" ng-disabled="!state.snapshotOptions.length">
-                                                <option value="">Select a snapshot</option>
-                                                <option ng-repeat="snapshot in state.snapshotOptions track by snapshot.path" value="{{snapshot.path}}">
-                                                    {{snapshot.name}} ({{snapshot.saved_at}})
-                                                </option>
-                                            </select>
-                                        </label>
-
-                                        <div class="button-row button-row--tight session-button-row">
-                                            <button type="button"
-                                                    class="secondary-button"
-                                                    ng-click="loadSnapshot()"
-                                                    ng-disabled="state.snapshotLoading || !state.selectedSnapshotPath">
-                                                {{state.snapshotLoading ? "Loading..." : "Load"}}
-                                            </button>
-                                            <button type="button"
-                                                    class="secondary-button"
-                                                    ng-click="saveSnapshot()"
-                                                    ng-disabled="state.snapshotSaving || !state.treePayload">
-                                                {{state.snapshotSaving ? "Saving..." : "Save current"}}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <p class="empty-note" ng-if="!state.snapshotOptions.length">No saved baselines yet for this source.</p>
-                                </div>
-
-                                <div class="session-block" ng-if="!canUseSnapshotStorage()">
-                                    <p class="section-label">Baselines</p>
-                                    <p class="empty-note">Set a baseline folder in DSS to save and reload baselines.</p>
-                                </div>
+                            <div class="session-block" ng-if="!canUseSnapshotStorage()">
+                                <p class="section-label">Baselines</p>
+                                <p class="empty-note">Set a baseline folder in DSS to save and reload baselines.</p>
                             </div>
                         </div>
                     </div>

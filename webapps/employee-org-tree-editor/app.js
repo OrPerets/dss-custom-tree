@@ -50,7 +50,9 @@
             filters: defaultFilters(),
             ui: {
                 filtersExpanded: false,
-                sessionExpanded: false
+                sessionExpanded: false,
+                filtersMenuStyle: {},
+                sessionMenuStyle: {}
             },
             drag: defaultDragState(),
             diagram: emptyDiagram("Loading the configured hierarchy source."),
@@ -277,9 +279,13 @@
         };
 
         $scope.toggleFilters = function() {
-            $scope.state.ui.filtersExpanded = !$scope.state.ui.filtersExpanded;
-            if ($scope.state.ui.filtersExpanded) {
+            var shouldExpand = !$scope.state.ui.filtersExpanded;
+
+            $scope.state.ui.filtersExpanded = shouldExpand;
+            if (shouldExpand) {
                 $scope.state.ui.sessionExpanded = false;
+                positionWorkspaceDropdowns();
+                scheduleWorkspaceDropdownPosition();
             }
         };
 
@@ -479,9 +485,13 @@
         };
 
         $scope.toggleSession = function() {
-            $scope.state.ui.sessionExpanded = !$scope.state.ui.sessionExpanded;
-            if ($scope.state.ui.sessionExpanded) {
+            var shouldExpand = !$scope.state.ui.sessionExpanded;
+
+            $scope.state.ui.sessionExpanded = shouldExpand;
+            if (shouldExpand) {
                 $scope.state.ui.filtersExpanded = false;
+                positionWorkspaceDropdowns();
+                scheduleWorkspaceDropdownPosition();
             }
         };
 
@@ -597,7 +607,22 @@
         initialize();
         $document.on("mousemove", onDocumentMouseMove);
         $document.on("mouseup", stopCanvasPan);
+        $document.on("click", onDocumentClick);
+        $document.on("keydown", onDocumentKeydown);
         windowElement.on("resize", onWindowResize);
+        windowElement.on("scroll", onWindowScroll);
+
+        $scope.$on("$destroy", function() {
+            $document.off("mousemove", onDocumentMouseMove);
+            $document.off("mouseup", stopCanvasPan);
+            $document.off("click", onDocumentClick);
+            $document.off("keydown", onDocumentKeydown);
+            windowElement.off("resize", onWindowResize);
+            windowElement.off("scroll", onWindowScroll);
+            if (viewportElement) {
+                viewportElement.removeEventListener("wheel", onViewportWheel);
+            }
+        });
 
         function initialize() {
             if (!$scope.state.form.employeeDataset) {
@@ -1089,19 +1114,102 @@
             $scope.state.canvas.dragging = false;
         }
 
+        function onDocumentClick(event) {
+            if (!$scope.state.ui.filtersExpanded && !$scope.state.ui.sessionExpanded) {
+                return;
+            }
+            if (closestElement(event.target, ".workspace__menu, .dropdown-panel")) {
+                return;
+            }
+
+            $scope.$applyAsync(closeWorkspaceDropdowns);
+        }
+
+        function onDocumentKeydown(event) {
+            var isEscape = event.key === "Escape" || event.key === "Esc" || event.keyCode === 27;
+
+            if (!isEscape || (!$scope.state.ui.filtersExpanded && !$scope.state.ui.sessionExpanded)) {
+                return;
+            }
+
+            $scope.$applyAsync(closeWorkspaceDropdowns);
+        }
+
+        function onWindowScroll() {
+            if (!$scope.state.ui.filtersExpanded && !$scope.state.ui.sessionExpanded) {
+                return;
+            }
+
+            positionWorkspaceDropdowns();
+            $scope.$applyAsync();
+        }
+
         function onWindowResize() {
             if ($scope.state.mode !== "workspace") {
                 return;
             }
 
+            positionWorkspaceDropdowns();
             syncViewportSize();
 
             if (!$scope.state.canvas.hasInteracted) {
                 fitDiagramToViewport();
+                $scope.$applyAsync();
                 return;
             }
 
             $scope.$applyAsync();
+        }
+
+        function closeWorkspaceDropdowns() {
+            $scope.state.ui.filtersExpanded = false;
+            $scope.state.ui.sessionExpanded = false;
+        }
+
+        function scheduleWorkspaceDropdownPosition() {
+            $timeout(positionWorkspaceDropdowns);
+        }
+
+        function positionWorkspaceDropdowns() {
+            if (!$scope.state || !$scope.state.ui) {
+                return;
+            }
+
+            if ($scope.state.ui.filtersExpanded) {
+                $scope.state.ui.filtersMenuStyle = buildDropdownStyle(".workspace__filters", 820, 620);
+            }
+            if ($scope.state.ui.sessionExpanded) {
+                $scope.state.ui.sessionMenuStyle = buildDropdownStyle(".workspace__session", 940, 660);
+            }
+        }
+
+        function buildDropdownStyle(anchorSelector, preferredWidth, preferredMaxHeight) {
+            var documentElement = $window.document.documentElement;
+            var viewportWidth = $window.innerWidth || documentElement.clientWidth || 1024;
+            var viewportHeight = $window.innerHeight || documentElement.clientHeight || 768;
+            var margin = viewportWidth <= 760 ? 16 : 24;
+            var availableWidth = Math.max(160, viewportWidth - (margin * 2));
+            var width = Math.min(preferredWidth, availableWidth);
+            var anchorElement = $window.document.querySelector(anchorSelector);
+            var anchorRect = anchorElement
+                ? anchorElement.getBoundingClientRect()
+                : { bottom: margin, right: viewportWidth - margin };
+            var maxLeft = Math.max(margin, viewportWidth - margin - width);
+            var left = clamp(anchorRect.right - width, margin, maxLeft);
+            var top = Math.max(margin, anchorRect.bottom + 8);
+            var availableHeight = viewportHeight - top - margin;
+
+            if (availableHeight < 220) {
+                top = margin;
+                availableHeight = viewportHeight - top - margin;
+            }
+
+            return {
+                top: Math.round(top) + "px",
+                left: Math.round(left) + "px",
+                width: Math.round(width) + "px",
+                maxHeight: Math.round(Math.max(180, Math.min(preferredMaxHeight, availableHeight))) + "px"
+            };
         }
 
         function syncViewportSize() {
