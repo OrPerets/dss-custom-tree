@@ -278,10 +278,9 @@
 
         $scope.toggleFilters = function() {
             $scope.state.ui.filtersExpanded = !$scope.state.ui.filtersExpanded;
-            $timeout(function() {
-                attachViewport();
-                fitDiagramToViewport();
-            });
+            if ($scope.state.ui.filtersExpanded) {
+                $scope.state.ui.sessionExpanded = false;
+            }
         };
 
         $scope.getActiveFilterCount = function() {
@@ -481,10 +480,9 @@
 
         $scope.toggleSession = function() {
             $scope.state.ui.sessionExpanded = !$scope.state.ui.sessionExpanded;
-            $timeout(function() {
-                attachViewport();
-                fitDiagramToViewport();
-            });
+            if ($scope.state.ui.sessionExpanded) {
+                $scope.state.ui.filtersExpanded = false;
+            }
         };
 
         $scope.beginCanvasPan = function($event) {
