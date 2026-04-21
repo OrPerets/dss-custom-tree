@@ -4,24 +4,31 @@
     <script src="/plugins/employee-org-tree-visualizer/resource/angular.min.js" type="text/javascript"></script>
     <link rel="stylesheet" href="/static/public/styles/1.0.0/fonts.css" />
     <link rel="stylesheet" href="/static/public/styles/1.0.0/variables.css" />
-    <meta charset="UTF-8"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 </head>
 <body ng-app="employeeOrgTreeApp" ng-controller="EmployeeOrgTreeController">
-    <div class="shell">
-        <div class="hero">
-            <div>
-                <p class="eyebrow">Dataiku DSS Plugin</p>
-                <h1>Employee Org Tree Editor</h1>
-                <p class="hero-copy">
-                    Load an employee dataset, validate hierarchy constraints, and ship edited org structures with snapshots, exports, and an auditable move trail.
-                </p>
+    <header class="topbar">
+        <div class="topbar-inner">
+            <div class="topbar-brand">
+                <div class="topbar-icon">
+                    <span class="topbar-icon__mark"></span>
+                </div>
+                <div>
+                    <span class="topbar-title">Organization Tree Editor</span>
+                    <span class="topbar-sub">Amdocs workforce design workspace</span>
+                </div>
             </div>
-            <div class="hero-badge">
-                <div class="hero-badge__label">Sprint 6</div>
-                <div class="hero-badge__value">Hardening, packaging, and release</div>
+            <div class="topbar-meta">
+                <span class="identity-badge" title="{{state.form.employeeDataset || 'Input dataset not configured'}}">{{state.form.employeeDataset || "Input dataset required"}}</span>
+                <span class="topbar-badge" ng-if="state.mode === 'workspace'">LIVE</span>
+                <span class="topbar-date">{{state.mode === "workspace" ? "Workspace ready" : state.mode === "config-error" ? "Needs configuration" : "Loading"}}</span>
             </div>
         </div>
+        <div class="topbar-gradient"></div>
+    </header>
 
+    <div class="shell">
         <section class="error-banner" ng-if="state.backendError">
             <div class="error-banner__header">
                 <div>
@@ -31,184 +38,81 @@
                 <button type="button" class="text-button" ng-click="dismissError()">Dismiss</button>
             </div>
             <ul class="error-list" ng-if="state.backendError.issues.length">
-                <li ng-repeat="issue in state.backendError.issues track by $index">{{issue.message}}</li>
+                <li ng-repeat="issue in state.backendError.issues track by $index">{{issue.message || issue}}</li>
             </ul>
         </section>
 
-        <section class="landing" ng-if="state.mode !== 'workspace'">
-            <div class="panel panel--form">
-                <div class="panel__header">
-                    <div>
-                        <p class="section-label">Loading setup</p>
-                        <h2>Select your org-tree source</h2>
-                    </div>
-                    <span class="state-chip" ng-if="state.datasetsLoading || state.schemaLoading">Loading metadata</span>
-                </div>
+        <section class="loading-state panel" ng-if="state.mode === 'loading'">
+            <p class="section-label">Connecting</p>
+            <h2>Preparing the workspace</h2>
+            <p class="panel-copy">Loading the configured hierarchy source.</p>
+        </section>
 
-                <div class="source-switch">
-                    <button type="button"
-                            class="source-option"
-                            ng-class="{'source-option--active': state.form.useDemo}"
-                            ng-click="useDemoMode()">
-                        Demo data
-                    </button>
-                    <button type="button"
-                            class="source-option"
-                            ng-class="{'source-option--active': !state.form.useDemo, 'source-option--disabled': !state.canUseDataikuDatasets}"
-                            ng-click="useDataikuMode()">
-                        Dataiku datasets
-                    </button>
-                </div>
-
-                <div class="input-grid" ng-if="state.form.useDemo">
-                    <div class="input-card input-card--accent">
-                        <span class="input-card__label">Employee dataset</span>
-                        <strong>demo/employees-demo.csv</strong>
-                        <p>Includes valid and invalid move scenarios plus enough structure to verify snapshot save/load and export flows.</p>
-                    </div>
-                    <div class="input-card input-card--accent">
-                        <span class="input-card__label">Constraints dataset</span>
-                        <strong>demo/manager-constraints-demo.csv</strong>
-                        <p>Provides the manager rules that the backend enforces before moves are committed or snapshots are materialized.</p>
-                    </div>
-                </div>
-
-                <div class="form-grid" ng-if="!state.form.useDemo">
-                    <label class="field">
-                        <span class="field__label">Employee dataset</span>
-                        <select ng-model="state.form.employeeDataset" ng-change="onEmployeeDatasetChange()">
-                            <option value="">Select a dataset</option>
-                            <option ng-repeat="option in state.datasetOptions track by option.id" value="{{option.id}}">
-                                {{option.label}}
-                            </option>
-                        </select>
-                    </label>
-
-                    <label class="field">
-                        <span class="field__label">Constraints dataset</span>
-                        <select ng-model="state.form.constraintsDataset" ng-change="onConstraintsDatasetChange()">
-                            <option value="">No constraints dataset</option>
-                            <option ng-repeat="option in state.datasetOptions track by option.id" value="{{option.id}}">
-                                {{option.label}}
-                            </option>
-                        </select>
-                    </label>
-                </div>
-
-                <div class="schema-grid">
-                    <div class="schema-card">
-                        <div class="schema-card__header">
-                            <h3>Employee schema</h3>
-                            <span>{{state.employeeColumns.length}} columns</span>
-                        </div>
-                        <div class="schema-tags" ng-if="state.employeeColumns.length">
-                            <span class="schema-tag" ng-repeat="column in state.employeeColumns track by column">{{column}}</span>
-                        </div>
-                        <p class="empty-note" ng-if="!state.employeeColumns.length">Select a source to inspect the employee columns.</p>
-                    </div>
-
-                    <div class="schema-card">
-                        <div class="schema-card__header">
-                            <h3>Constraints schema</h3>
-                            <span>{{state.constraintsColumns.length}} columns</span>
-                        </div>
-                        <div class="schema-tags" ng-if="state.constraintsColumns.length">
-                            <span class="schema-tag" ng-repeat="column in state.constraintsColumns track by column">{{column}}</span>
-                        </div>
-                        <p class="empty-note" ng-if="!state.constraintsColumns.length">Optional in v1. Leave it empty to load only the employee hierarchy.</p>
-                    </div>
-                </div>
-
-                <div class="landing-actions">
-                    <button type="button" class="secondary-button" ng-click="validateInputs()" ng-disabled="!canSubmit() || state.validating || state.treeLoading">
-                        {{state.validating ? "Validating..." : "Validate inputs"}}
-                    </button>
-                    <button type="button" class="primary-button" ng-click="loadOrgTree()" ng-disabled="!canSubmit() || state.treeLoading || state.validating">
-                        {{state.treeLoading ? "Loading org tree..." : "Open org-tree canvas"}}
-                    </button>
-                </div>
-            </div>
-
-            <div class="panel panel--summary">
-                <div class="panel__header">
-                    <div>
-                        <p class="section-label">Release scope</p>
-                        <h2>What ships in Sprint 6</h2>
-                    </div>
-                </div>
-
-                <ol class="step-list">
-                    <li>Run the editor against DSS datasets or the bundled demo inputs.</li>
-                    <li>Validate and apply safe manager moves with an audit trail.</li>
-                    <li>Save snapshots and export the current hierarchy plus move history.</li>
-                    <li>Package the plugin with a bundled Python code environment for DSS upload.</li>
-                </ol>
-
-                <div class="summary-card" ng-if="state.validationSummary">
-                    <div class="summary-card__header">
-                        <h3>Last validation</h3>
-                        <span class="state-chip state-chip--success">Valid</span>
-                    </div>
-                    <p>Root employee: <strong>{{state.validationSummary.root_employee_id}}</strong></p>
-                    <p>Employees: <strong>{{state.validationSummary.employee_count}}</strong></p>
-                    <p>Constraints: <strong>{{state.validationSummary.constraint_count}}</strong></p>
-                    <p>Source: <strong>{{state.validationSummary.source.mode}}</strong></p>
-                </div>
-
-                <div class="summary-card">
-                    <div class="summary-card__header">
-                        <h3>Configured defaults</h3>
-                    </div>
-                    <p>Employee dataset: <strong>{{state.form.employeeDataset || "not preset"}}</strong></p>
-                    <p>Constraints dataset: <strong>{{state.form.constraintsDataset || "not preset"}}</strong></p>
-                    <p>Snapshot folder: <strong>{{state.form.snapshotFolder || "not preset"}}</strong></p>
-                </div>
-            </div>
+        <section class="loading-state panel" ng-if="state.mode === 'config-error'">
+            <p class="section-label">Configuration</p>
+            <h2>Workspace could not open</h2>
+            <p class="panel-copy">Review the configuration or validation message above, then refresh the webapp.</p>
         </section>
 
         <section class="workspace" ng-if="state.mode === 'workspace'">
             <div class="workspace__toolbar">
-                <div>
-                    <p class="section-label">Org-tree workspace</p>
-                    <h2>{{state.treePayload.meta.employee_count}} employees loaded</h2>
+                <div class="workspace__headline">
+                    <div>
+                        <span class="section-label">Active workspace</span>
+                        <h2>{{state.treePayload.meta.employee_count}} employees</h2>
+                    </div>
+                    <div class="workspace-kpis">
+                        <span class="summary-pill">Root <strong>{{state.treePayload.meta.root_employee_id}}</strong></span>
+                        <span class="summary-pill">Visible <strong>{{getVisibleEmployeesLabel()}}</strong></span>
+                        <span class="summary-pill summary-pill--accent">Source <strong>{{state.treePayload.meta.source.employee_dataset}}</strong></span>
+                    </div>
                 </div>
+
                 <div class="workspace__actions">
-                    <span class="state-chip">{{state.treePayload.meta.source.mode}}</span>
+                    <span class="state-chip">DSS datasets</span>
                     <span class="state-chip state-chip--warning" ng-if="state.treePayload.meta.warning_count">{{state.treePayload.meta.warning_count}} warnings</span>
                     <span class="state-chip state-chip--info" ng-if="getUnsavedMoveCount()">{{getUnsavedMoveCount()}} unsaved moves</span>
                     <button type="button"
                             class="secondary-button"
                             ng-click="saveSnapshot()"
                             ng-disabled="state.snapshotSaving || !state.treePayload">
-                        {{state.snapshotSaving ? "Saving snapshot..." : "Save snapshot"}}
+                        {{state.snapshotSaving ? "Saving baseline..." : "Save baseline"}}
                     </button>
                     <button type="button"
                             class="secondary-button"
                             ng-click="exportHierarchy()"
                             ng-disabled="state.hierarchyExporting || !state.treePayload">
-                        {{state.hierarchyExporting ? "Exporting hierarchy..." : "Export hierarchy"}}
+                        {{state.hierarchyExporting ? "Exporting..." : "Export hierarchy"}}
                     </button>
                     <button type="button"
                             class="secondary-button"
                             ng-click="exportMoveLog()"
                             ng-disabled="state.moveLogExporting || !state.treePayload">
-                        {{state.moveLogExporting ? "Exporting move log..." : "Export move log"}}
+                        {{state.moveLogExporting ? "Exporting..." : "Export moves"}}
                     </button>
-                    <button type="button" class="secondary-button" ng-click="returnToLanding()">Change source</button>
-                    <button type="button" class="secondary-button" ng-click="loadOrgTree()">Reload</button>
+                    <button type="button" class="secondary-button" ng-click="loadOrgTree()">Refresh</button>
                 </div>
             </div>
 
             <div class="workspace__content">
-                <aside class="workspace__sidebar">
-                    <div class="info-card">
-                        <div class="info-card__header">
+                <aside class="workspace__filters">
+                    <div class="details-card details-card--filters">
+                        <div class="details-card__header">
                             <div>
                                 <p class="section-label">Filters</p>
-                                <h3>Refine the chart</h3>
+                                <h3>Refine tree</h3>
                             </div>
                             <button type="button" class="text-button text-button--muted" ng-click="resetFilters()">Reset</button>
                         </div>
+
+                        <label class="field">
+                            <span class="field__label">Search employees</span>
+                            <input type="search"
+                                   placeholder="Name, employee ID, or title"
+                                   ng-model="state.filters.search"
+                                   ng-model-options="{ debounce: 120 }"
+                                   ng-change="applyFilters()">
+                        </label>
 
                         <label class="field">
                             <span class="field__label">Department</span>
@@ -240,139 +144,22 @@
                             </select>
                         </label>
 
-                        <label class="toggle-field">
+                        <label class="toggle-field toggle-field--sidebar">
                             <input type="checkbox" ng-model="state.filters.onlyWarnings" ng-change="applyFilters()">
-                            <span>Only employees with rule or capacity warnings</span>
+                            <span>Warnings only</span>
                         </label>
-                    </div>
-
-                    <div class="info-card">
-                        <div class="info-card__header">
-                            <div>
-                                <p class="section-label">Audit trail</p>
-                                <h3>{{getPendingMovesLabel()}}</h3>
-                            </div>
-                            <button type="button"
-                                    class="text-button text-button--muted"
-                                    ng-if="state.lastSavedPayload"
-                                    ng-click="resetUnsavedMoves()">
-                                Reset to last saved
-                            </button>
-                        </div>
-
-                        <p>Visible employees: <strong>{{getVisibleEmployeesLabel()}}</strong></p>
-                        <p>Matched employees: <strong>{{state.diagram.matchedCount}}</strong></p>
-                        <p>Root employee: <strong>{{state.treePayload.meta.root_employee_id}}</strong></p>
-                        <p>Last saved baseline: <strong>{{getLastSavedLabel()}}</strong></p>
-                        <p ng-if="state.lastSavedSnapshot && state.lastSavedSnapshot.saved_at">Saved at: <strong>{{state.lastSavedSnapshot.saved_at}}</strong></p>
-                        <p ng-if="!canUseSnapshotStorage()" class="empty-note">Configure a snapshot folder in DSS to enable snapshot save/load. Demo mode saves to a local repo folder.</p>
-
-                        <ul class="change-log" ng-if="state.treePayload.change_log.length">
-                            <li class="change-log__entry" ng-repeat="entry in state.treePayload.change_log track by $index">
-                                <strong>{{entry.employee_name}}</strong>
-                                <span>{{entry.old_manager_name || entry.old_manager_id || "Root"}} -> {{entry.new_manager_name}}</span>
-                            </li>
-                        </ul>
-                        <p class="empty-note" ng-if="!state.treePayload.change_log.length">Accepted moves will appear here and can be saved or exported as an audit trail.</p>
-                    </div>
-
-                    <div class="info-card">
-                        <div class="info-card__header">
-                            <div>
-                                <p class="section-label">Snapshots</p>
-                                <h3>Load a saved baseline</h3>
-                            </div>
-                            <span class="state-chip" ng-if="state.snapshotsLoading">Refreshing</span>
-                        </div>
-
-                        <label class="field">
-                            <span class="field__label">Saved snapshots</span>
-                            <select ng-model="state.selectedSnapshotPath" ng-disabled="!state.snapshotOptions.length">
-                                <option value="">Select a snapshot</option>
-                                <option ng-repeat="snapshot in state.snapshotOptions track by snapshot.path" value="{{snapshot.path}}">
-                                    {{snapshot.name}} ({{snapshot.saved_at}})
-                                </option>
-                            </select>
-                        </label>
-
-                        <div class="landing-actions">
-                            <button type="button"
-                                    class="secondary-button"
-                                    ng-click="loadSnapshot()"
-                                    ng-disabled="state.snapshotLoading || !state.selectedSnapshotPath">
-                                {{state.snapshotLoading ? "Loading snapshot..." : "Load snapshot"}}
-                            </button>
-                            <button type="button"
-                                    class="secondary-button"
-                                    ng-click="saveSnapshot()"
-                                    ng-disabled="state.snapshotSaving || !state.treePayload">
-                                {{state.snapshotSaving ? "Saving..." : "Save current"}}
-                            </button>
-                        </div>
-
-                        <p class="empty-note" ng-if="!state.snapshotOptions.length">No saved snapshots yet for this source.</p>
-                    </div>
-
-                    <div class="info-card"
-                         ng-if="state.moveFeedback"
-                         ng-class="{
-                            'feedback-card--success': state.moveFeedback.tone === 'success',
-                            'feedback-card--error': state.moveFeedback.tone === 'error',
-                            'feedback-card--info': state.moveFeedback.tone === 'info'
-                         }">
-                        <div class="info-card__header">
-                            <div>
-                                <p class="section-label">Workspace feedback</p>
-                                <h3>{{state.moveFeedback.title}}</h3>
-                            </div>
-                            <button type="button" class="text-button text-button--muted" ng-click="dismissMoveFeedback()">Dismiss</button>
-                        </div>
-                        <p>{{state.moveFeedback.message}}</p>
-                        <ul class="detail-list" ng-if="state.moveFeedback.issues.length">
-                            <li ng-repeat="issue in state.moveFeedback.issues track by $index">{{issue}}</li>
-                        </ul>
-                    </div>
-
-                    <div class="info-card" ng-if="state.drag.employeeId">
-                        <p class="section-label">Drag preview</p>
-                        <h3>{{state.drag.preview ? state.drag.preview.title : "Drag an employee card"}}</h3>
-                        <p>{{state.drag.preview ? state.drag.preview.message : "Hover a potential manager to preview the move."}}</p>
-                    </div>
-
-                    <div class="info-card">
-                        <p class="section-label">Loaded source</p>
-                        <h3>{{state.treePayload.meta.source.mode === "demo" ? "Demo mode" : "Dataiku mode"}}</h3>
-                        <p>Employees: <strong>{{state.treePayload.meta.source.employee_dataset}}</strong></p>
-                        <p ng-if="state.treePayload.meta.source.constraints_dataset">Constraints: <strong>{{state.treePayload.meta.source.constraints_dataset}}</strong></p>
                     </div>
                 </aside>
 
-                <div class="workspace__canvas">
+                <div class="workspace__main">
                     <div class="canvas-card">
                         <div class="canvas-card__header canvas-card__header--stacked">
-                            <div class="canvas-card__title">
-                                <div>
-                                    <p class="section-label">Canvas</p>
-                                    <h3>Employee hierarchy</h3>
-                                </div>
-                                <p class="canvas-card__hint">Drag the <strong>Move</strong> handle on any employee card onto a new manager, then save the resulting hierarchy or export it as a flat table.</p>
-                            </div>
-
                             <div class="canvas-toolbar">
-                                <label class="search-field">
-                                    <span class="field__label">Search by name</span>
-                                    <input type="search"
-                                           placeholder="Search employee name, ID, or title"
-                                           ng-model="state.filters.search"
-                                           ng-model-options="{ debounce: 120 }"
-                                           ng-change="applyFilters()">
-                                </label>
-
                                 <div class="canvas-controls">
                                     <button type="button" class="secondary-button canvas-control" ng-click="zoomOut()">-</button>
                                     <button type="button" class="secondary-button canvas-control" ng-click="zoomIn()">+</button>
                                     <button type="button" class="secondary-button canvas-control" ng-click="fitToScreen()">Fit</button>
-                                    <button type="button" class="secondary-button canvas-control" ng-click="focusSelectedNode()" ng-disabled="!state.selectedNode">Focus selected</button>
+                                    <button type="button" class="secondary-button canvas-control" ng-click="focusSelectedNode()" ng-disabled="!state.selectedNode">Focus</button>
                                 </div>
                             </div>
                         </div>
@@ -420,16 +207,13 @@
                                             <span>{{renderNode.data.level}}</span>
                                         </div>
 
-                                        <div class="org-node__badges" ng-if="renderNode.data.manager_rule || renderNode.data.warnings.length">
+                                        <div class="org-node__signals" ng-if="renderNode.data.manager_rule || renderNode.data.warnings.length">
                                             <span class="node-badge node-badge--rule" ng-if="renderNode.data.manager_rule">Rule</span>
-                                            <span class="node-badge node-badge--warning"
-                                                  ng-repeat="warning in renderNode.data.warnings track by warning.code">
-                                                {{getWarningLabel(warning)}}
-                                            </span>
+                                            <span class="node-badge node-badge--warning" ng-if="renderNode.data.warnings.length">{{getWarningCountLabel(renderNode.data)}}</span>
                                         </div>
 
                                         <div class="org-node__footer">
-                                            <span>{{renderNode.data.employee_id}}</span>
+                                            <span>{{renderNode.data.warnings.length ? "Needs review" : "Ready to move"}}</span>
                                             <span class="capacity-pill" ng-class="getCapacityTone(renderNode.data)">
                                                 {{getCapacityLabel(renderNode.data)}}
                                             </span>
@@ -449,10 +233,15 @@
                 </div>
 
                 <aside class="workspace__details">
-                    <div class="details-card" ng-if="state.selectedNode">
+                    <div class="details-card details-card--selected" ng-if="state.selectedNode">
                         <p class="section-label">Selected employee</p>
-                        <h3>{{state.selectedNode.full_name}}</h3>
-                        <p class="details-title">{{state.selectedNode.job_title}}</p>
+                        <div class="details-summary">
+                            <span class="org-node__avatar org-node__avatar--large">{{getAvatarLabel(state.selectedNode)}}</span>
+                            <div>
+                                <h3>{{state.selectedNode.full_name}}</h3>
+                                <p class="details-title">{{state.selectedNode.job_title}}</p>
+                            </div>
+                        </div>
 
                         <div class="details-badges">
                             <span class="status-pill" ng-class="getStatusTone(state.selectedNode)">{{state.selectedNode.employment_status}}</span>
@@ -467,13 +256,7 @@
                             <div><dt>Department</dt><dd>{{state.selectedNode.department}}</dd></div>
                             <div><dt>Location</dt><dd>{{state.selectedNode.location}}</dd></div>
                             <div><dt>Level</dt><dd>{{state.selectedNode.level}}</dd></div>
-                            <div><dt>Status</dt><dd>{{state.selectedNode.employment_status}}</dd></div>
-                            <div><dt>Direct reports</dt><dd>{{state.selectedNode.direct_reports_count}}</dd></div>
-                            <div><dt>Capacity remaining</dt><dd>{{state.selectedNode.capacity_remaining == null ? "Unbounded" : state.selectedNode.capacity_remaining}}</dd></div>
-                            <div><dt>Email</dt><dd>{{state.selectedNode.email || "n/a"}}</dd></div>
-                            <div><dt>Team</dt><dd>{{state.selectedNode.team_name || "n/a"}}</dd></div>
-                            <div><dt>Start date</dt><dd>{{state.selectedNode.start_date || "n/a"}}</dd></div>
-                            <div><dt>Can be manager</dt><dd>{{state.selectedNode.can_be_manager ? "Yes" : "No"}}</dd></div>
+                            <div><dt>Capacity</dt><dd>{{getCapacityLabel(state.selectedNode)}}</dd></div>
                         </dl>
 
                         <div class="details-section" ng-if="state.drag.employeeId === state.selectedNode.employee_id && state.drag.preview">
@@ -500,7 +283,134 @@
                             </ul>
                         </div>
                     </div>
+
+                    <div class="details-card details-card--empty" ng-if="!state.selectedNode">
+                        <p class="section-label">Selected employee</p>
+                        <h3>No employee selected</h3>
+                        <p class="empty-note">Select a card in the hierarchy to inspect details, warnings, and manager rules.</p>
+                    </div>
+
+                    <div class="details-card"
+                         ng-if="state.moveFeedback"
+                         ng-class="{
+                            'feedback-card--success': state.moveFeedback.tone === 'success',
+                            'feedback-card--error': state.moveFeedback.tone === 'error',
+                            'feedback-card--info': state.moveFeedback.tone === 'info'
+                         }">
+                        <div class="details-card__header">
+                            <div>
+                                <p class="section-label">Workspace feedback</p>
+                                <h3>{{state.moveFeedback.title}}</h3>
+                            </div>
+                            <button type="button" class="text-button text-button--muted" ng-click="dismissMoveFeedback()">Dismiss</button>
+                        </div>
+                        <p>{{state.moveFeedback.message}}</p>
+                        <ul class="detail-list" ng-if="state.moveFeedback.issues.length">
+                            <li ng-repeat="issue in state.moveFeedback.issues track by $index">{{issue}}</li>
+                        </ul>
+                    </div>
+
+                    <div class="details-card" ng-if="state.drag.employeeId">
+                        <p class="section-label">Move preview</p>
+                        <h3>{{state.drag.preview ? state.drag.preview.title : "Drag an employee card"}}</h3>
+                        <p>{{state.drag.preview ? state.drag.preview.message : "Hover a manager card to preview the reassignment."}}</p>
+                    </div>
                 </aside>
+            </div>
+
+            <div class="workspace__session">
+                <div class="details-card details-card--session">
+                    <div class="details-card__header">
+                        <div>
+                            <p class="section-label">Session</p>
+                            <h3>{{getPendingMovesLabel()}}</h3>
+                        </div>
+                        <button type="button"
+                                class="text-button text-button--muted"
+                                ng-if="state.lastSavedPayload"
+                                ng-click="resetUnsavedMoves()">
+                            Restore baseline
+                        </button>
+                    </div>
+
+                    <div class="session-grid">
+                        <div class="session-block">
+                            <div class="metric-list metric-list--session">
+                                <div class="metric-item">
+                                    <span>Matched</span>
+                                    <strong>{{state.diagram.matchedCount}}</strong>
+                                </div>
+                                <div class="metric-item">
+                                    <span>Last saved</span>
+                                    <strong>{{getLastSavedLabel()}}</strong>
+                                </div>
+                                <div class="metric-item" ng-if="state.lastSavedSnapshot && state.lastSavedSnapshot.saved_at">
+                                    <span>Saved at</span>
+                                    <strong>{{state.lastSavedSnapshot.saved_at}}</strong>
+                                </div>
+                                <div class="metric-item">
+                                    <span>Employees source</span>
+                                    <strong>{{state.treePayload.meta.source.employee_dataset}}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="session-block">
+                            <p class="section-label">Recent moves</p>
+                            <ul class="change-log change-log--inline" ng-if="state.treePayload.change_log.length">
+                                <li class="change-log__entry" ng-repeat="entry in state.treePayload.change_log | limitTo:3 track by $index">
+                                    <strong>{{entry.employee_name}}</strong>
+                                    <span>{{entry.old_manager_name || entry.old_manager_id || "Root"}} -> {{entry.new_manager_name}}</span>
+                                </li>
+                            </ul>
+                            <p class="empty-note" ng-if="!state.treePayload.change_log.length">Accepted manager changes will appear here.</p>
+                        </div>
+
+                        <div class="session-block" ng-if="canUseSnapshotStorage()">
+                            <div class="details-card__header details-card__header--session">
+                                <div>
+                                    <p class="section-label">Baselines</p>
+                                    <h4>Saved snapshots</h4>
+                                </div>
+                                <span class="state-chip" ng-if="state.snapshotsLoading">Refreshing</span>
+                            </div>
+
+                            <div class="session-actions">
+                                <label class="field field--compact session-field">
+                                    <span class="field__label">Snapshot</span>
+                                    <select ng-model="state.selectedSnapshotPath" ng-disabled="!state.snapshotOptions.length">
+                                        <option value="">Select a snapshot</option>
+                                        <option ng-repeat="snapshot in state.snapshotOptions track by snapshot.path" value="{{snapshot.path}}">
+                                            {{snapshot.name}} ({{snapshot.saved_at}})
+                                        </option>
+                                    </select>
+                                </label>
+
+                                <div class="button-row button-row--tight session-button-row">
+                                    <button type="button"
+                                            class="secondary-button"
+                                            ng-click="loadSnapshot()"
+                                            ng-disabled="state.snapshotLoading || !state.selectedSnapshotPath">
+                                        {{state.snapshotLoading ? "Loading..." : "Load"}}
+                                    </button>
+                                    <button type="button"
+                                            class="secondary-button"
+                                            ng-click="saveSnapshot()"
+                                            ng-disabled="state.snapshotSaving || !state.treePayload">
+                                        {{state.snapshotSaving ? "Saving..." : "Save current"}}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p class="empty-note" ng-if="!state.snapshotOptions.length">No saved baselines yet for this source.</p>
+                        </div>
+
+                        <div class="session-block" ng-if="!canUseSnapshotStorage()">
+                            <p class="section-label">Baselines</p>
+                            <p class="empty-note">Set a baseline folder in DSS to save and reload baselines.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </div>

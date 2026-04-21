@@ -2,13 +2,13 @@
   "id" : "employee-org-tree-visualizer",
   "version" : "2.0.0",
   "meta" : {
-    "label" : "Employee Org Tree Editor",
-    "description" : "Visualize and edit employee reporting hierarchies in Dataiku DSS",
+    "label" : "Amdocs Workforce Org Designer",
+    "description" : "Review and update workforce reporting hierarchies in Dataiku DSS",
     "author" : "Or Peretz",
     "supportLevel": "TIER2_SUPPORT",
     "icon" : "icon-sitemap",
     "licenseInfo" : "Apache Software License",
-    "tags" : ["HR", "Visualization"],
+    "tags" : ["HR", "Workforce", "Visualization"],
     "category": "Visualization"
   }
 }

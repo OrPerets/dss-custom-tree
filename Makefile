@@ -10,7 +10,7 @@ plugin:
 	@rm -rf dist
 	@mkdir dist
 	@REMOTE_URL="$$(git config --get remote.origin.url 2>/dev/null || true)" LAST_COMMIT_ID="$$(git rev-parse HEAD 2>/dev/null || true)" python3 -c 'import json, os; json.dump({"remote_url": os.environ.get("REMOTE_URL") or None, "last_commit_id": os.environ.get("LAST_COMMIT_ID") or None}, open("release_info.json", "w"))'
-	@if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+	@if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [ -z "$$(git status --porcelain)" ]; then \
 		git archive -v -9 --format zip -o dist/${archive_file_name} HEAD; \
 		zip --delete dist/${archive_file_name} "tests/*"; \
 	else \

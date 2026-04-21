@@ -1,12 +1,12 @@
-# Employee Org Tree Editor
+# Amdocs Workforce Org Designer
 
-This repository is a Dataiku DSS plugin for loading, validating, visualizing, editing, saving, and exporting employee reporting hierarchies.
+This repository is a Dataiku DSS plugin for loading, validating, visualizing, editing, saving, and exporting employee reporting hierarchies from DSS datasets.
 
 ## What The Plugin Does
 
 The webapp supports one org-tree workflow end to end:
 
-- Load an employee dataset from DSS or the bundled demo files.
+- Load an employee dataset from DSS.
 - Build a validated hierarchy from `employee_id` and `manager_id`.
 - Render the hierarchy as an interactive employee card canvas.
 - Inspect employee details, warnings, and manager-specific rules.
@@ -24,16 +24,15 @@ Reference material:
 
 - [docs/employee-tree-input-spec.md](docs/employee-tree-input-spec.md)
 - [docs/employee-tree-mockup.md](docs/employee-tree-mockup.md)
-- [demo/README.md](demo/README.md)
 
 ## Repository Guide
 
-- [plugin.json](plugin.json) defines the plugin identity and release version.
+- [plugin.json](plugin.json) defines the plugin identity and package version.
 - [webapps/employee-org-tree-editor](webapps/employee-org-tree-editor) contains the DSS webapp UI and backend entrypoint.
 - [python-lib/employee_tree](python-lib/employee_tree) contains the reusable hierarchy parsing, validation, move simulation, and serialization logic.
 - [code-env/python](code-env/python) contains the bundled plugin code environment definition.
 - [tests/python/unit](tests/python/unit) covers validation, move simulation, persistence, and synthetic-org hardening.
-- [docs/sprint-0-legacy-audit.md](docs/sprint-0-legacy-audit.md) records the legacy cleanup decisions that led to the current release shape.
+- [docs/sprint-0-legacy-audit.md](docs/sprint-0-legacy-audit.md) records the legacy cleanup decisions behind the current implementation.
 
 ## Local Validation
 

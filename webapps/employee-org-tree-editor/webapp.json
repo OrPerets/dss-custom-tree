@@ -1,7 +1,7 @@
 {
   "meta": {
-    "label": "Employee org tree editor",
-    "description": "Load and validate employee hierarchy datasets before entering the org-tree workspace",
+    "label": "Amdocs workforce org designer",
+    "description": "Load workforce hierarchy datasets and open the interactive org-design workspace",
     "icon": "icon-sitemap"
   },
 
@@ -14,28 +14,28 @@
   "params": [
     {
       "type": "SEPARATOR",
-      "label": "Default datasets"
+      "label": "Source defaults"
     },
     {
       "name": "default_employee_dataset",
       "type": "DATASET",
-      "label": "Default employee dataset",
-      "mandatory": false
+      "label": "Input workforce dataset",
+      "mandatory": true
     },
     {
       "name": "default_constraints_dataset",
       "type": "DATASET",
-      "label": "Default constraints dataset",
+      "label": "Default rules dataset",
       "mandatory": false
     },
     {
       "type": "SEPARATOR",
-      "label": "Optional persistence"
+      "label": "Saved baselines"
     },
     {
       "name": "snapshot_folder",
       "type": "FOLDER",
-      "label": "Snapshot folder",
+      "label": "Baseline folder",
       "mandatory": false
     }
   ]

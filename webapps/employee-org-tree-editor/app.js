@@ -1,11 +1,11 @@
 (function() {
     "use strict";
 
-    var NODE_WIDTH = 248;
+    var NODE_WIDTH = 264;
     var NODE_HEIGHT = 176;
-    var HORIZONTAL_GAP = 36;
-    var VERTICAL_GAP = 118;
-    var DIAGRAM_PADDING = 56;
+    var HORIZONTAL_GAP = 76;
+    var VERTICAL_GAP = 144;
+    var DIAGRAM_PADDING = 68;
     var ZOOM_STEP = 1.14;
 
     var app = angular.module("employeeOrgTreeApp", []);
@@ -19,10 +19,6 @@
 
         $scope.state = {
             mode: "loading",
-            sourceMode: "demo",
-            datasetsLoading: true,
-            schemaLoading: false,
-            validating: false,
             treeLoading: false,
             moveSubmitting: false,
             snapshotSaving: false,
@@ -30,19 +26,13 @@
             hierarchyExporting: false,
             moveLogExporting: false,
             snapshotsLoading: false,
-            canUseDataikuDatasets: false,
             backendError: null,
             moveFeedback: null,
-            validationSummary: null,
-            datasetOptions: [],
-            employeeColumns: [],
-            constraintsColumns: [],
             snapshotOptions: [],
             selectedSnapshotPath: "",
             lastSavedPayload: null,
             lastSavedSnapshot: null,
             form: {
-                useDemo: true,
                 employeeDataset: webAppConfig.default_employee_dataset || null,
                 constraintsDataset: webAppConfig.default_constraints_dataset || null,
                 snapshotFolder: webAppConfig.snapshot_folder || null
@@ -59,7 +49,7 @@
             },
             filters: defaultFilters(),
             drag: defaultDragState(),
-            diagram: emptyDiagram("Load an employee dataset to render the org chart."),
+            diagram: emptyDiagram("Loading the configured hierarchy source."),
             canvas: {
                 scale: 1,
                 x: 0,
@@ -97,15 +87,6 @@
                 return;
             }
             $scope.state.selectedNode = node;
-        };
-
-        $scope.returnToLanding = function() {
-            clearDragState();
-            $scope.state.mode = "landing";
-        };
-
-        $scope.canSubmit = function() {
-            return $scope.state.form.useDemo || !!$scope.state.form.employeeDataset;
         };
 
         $scope.getManagerLabel = function(node) {
@@ -193,7 +174,7 @@
         };
 
         $scope.canUseSnapshotStorage = function() {
-            return $scope.state.form.useDemo || !!$scope.state.form.snapshotFolder;
+            return !!$scope.state.form.snapshotFolder;
         };
 
         $scope.getUnsavedMoveCount = function() {
@@ -255,64 +236,14 @@
             };
         };
 
-        $scope.useDemoMode = function() {
-            $scope.state.form.useDemo = true;
-            $scope.state.validationSummary = null;
-            $scope.state.employeeColumns = [];
-            $scope.state.constraintsColumns = [];
-            $scope.dismissError();
-            $scope.dismissMoveFeedback();
-            refreshSchemas();
-        };
-
-        $scope.useDataikuMode = function() {
-            if (!$scope.state.canUseDataikuDatasets) {
-                return;
-            }
-            $scope.state.form.useDemo = false;
-            $scope.state.validationSummary = null;
-            $scope.dismissError();
-            $scope.dismissMoveFeedback();
-            refreshSchemas();
-        };
-
-        $scope.onEmployeeDatasetChange = function() {
-            $scope.state.validationSummary = null;
-            $scope.dismissError();
-            refreshSchemas();
-        };
-
-        $scope.onConstraintsDatasetChange = function() {
-            $scope.state.validationSummary = null;
-            $scope.dismissError();
-            refreshSchemas();
-        };
-
-        $scope.validateInputs = function() {
-            $scope.state.validating = true;
-            $scope.state.validationSummary = null;
-            $scope.dismissError();
-
-            $http.post(getWebAppBackendUrl("validate-input"), buildRequestPayload())
-                .then(function(response) {
-                    $scope.state.validating = false;
-                    $scope.state.validationSummary = response.data;
-                }, function(error) {
-                    $scope.state.validating = false;
-                    handleBackendError(error, "Unable to validate the selected inputs.");
-                });
-        };
-
         $scope.loadOrgTree = function() {
             $scope.state.treeLoading = true;
-            $scope.state.validationSummary = null;
             $scope.dismissError();
             $scope.dismissMoveFeedback();
             clearDragState();
 
             $http.post(getWebAppBackendUrl("validate-input"), buildRequestPayload())
-                .then(function(response) {
-                    $scope.state.validationSummary = response.data;
+                .then(function() {
                     return $http.post(getWebAppBackendUrl("load-org-tree"), buildRequestPayload());
                 })
                 .then(function(response) {
@@ -325,6 +256,9 @@
                     });
                 }, function(error) {
                     $scope.state.treeLoading = false;
+                    if (!$scope.state.treePayload) {
+                        $scope.state.mode = "config-error";
+                    }
                     handleBackendError(error, "Unable to load the employee org tree.");
                 });
         };
@@ -381,7 +315,7 @@
                     });
                     $scope.state.moveFeedback = {
                         tone: "success",
-                        title: "Snapshot saved",
+                        title: "Baseline saved",
                         message: (data.snapshot && data.snapshot.name ? data.snapshot.name : "Snapshot") + " saved successfully.",
                         issues: data.snapshot && data.snapshot.storage_label
                             ? ["Storage: " + data.snapshot.storage_label]
@@ -419,7 +353,7 @@
                     });
                     $scope.state.moveFeedback = {
                         tone: "success",
-                        title: "Snapshot loaded",
+                        title: "Baseline loaded",
                         message: (data.snapshot && data.snapshot.name ? data.snapshot.name : "Snapshot") + " loaded successfully.",
                         issues: []
                     };
@@ -447,7 +381,7 @@
                     $scope.state.moveFeedback = {
                         tone: "success",
                         title: "Hierarchy exported",
-                        message: "The current flattened hierarchy export is ready.",
+                        message: "The current hierarchy export is ready.",
                         issues: []
                     };
                 }, function(error) {
@@ -473,7 +407,7 @@
                     $scope.state.moveFeedback = {
                         tone: "success",
                         title: "Move log exported",
-                        message: "The current move log export is ready.",
+                        message: "The move log export is ready.",
                         issues: []
                     };
                 }, function(error) {
@@ -613,26 +547,17 @@
         windowElement.on("resize", onWindowResize);
 
         function initialize() {
-            $http.get(getWebAppBackendUrl("get-datasets"))
-                .then(function(response) {
-                    var data = response.data || {};
-                    $scope.state.datasetsLoading = false;
-                    $scope.state.datasetOptions = normalizeDatasetOptions(data.datasets || []);
-                    $scope.state.canUseDataikuDatasets = $scope.state.datasetOptions.length > 0;
+            if (!$scope.state.form.employeeDataset) {
+                $scope.state.mode = "config-error";
+                $scope.state.backendError = {
+                    title: "Input workforce dataset required",
+                    message: "Configure the required input workforce dataset in the Dataiku webapp settings.",
+                    issues: []
+                };
+                return;
+            }
 
-                    if ($scope.state.canUseDataikuDatasets && $scope.state.form.employeeDataset) {
-                        $scope.state.form.useDemo = false;
-                    } else if (!$scope.state.canUseDataikuDatasets && data.mode === "demo") {
-                        $scope.state.form.useDemo = true;
-                    }
-
-                    $scope.state.mode = "landing";
-                    refreshSchemas();
-                }, function(error) {
-                    $scope.state.datasetsLoading = false;
-                    $scope.state.mode = "landing";
-                    handleBackendError(error, "Unable to fetch available datasets.");
-                });
+            $scope.loadOrgTree();
         }
 
         function initializeWorkspace(payload, options) {
@@ -666,96 +591,12 @@
             rebuildDiagram(effectiveOptions.fitToScreen !== false);
         }
 
-        function refreshSchemas() {
-            $scope.state.employeeColumns = [];
-            $scope.state.constraintsColumns = [];
-
-            if ($scope.state.form.useDemo) {
-                $scope.state.schemaLoading = true;
-                loadSchema("demo/employees-demo.csv", function(columns) {
-                    $scope.state.employeeColumns = columns;
-                });
-                loadSchema("demo/manager-constraints-demo.csv", function(columns) {
-                    $scope.state.constraintsColumns = columns;
-                    $scope.state.schemaLoading = false;
-                }, function() {
-                    $scope.state.schemaLoading = false;
-                });
-                return;
-            }
-
-            if (!$scope.state.form.employeeDataset) {
-                return;
-            }
-
-            $scope.state.schemaLoading = true;
-            loadSchema($scope.state.form.employeeDataset, function(columns) {
-                $scope.state.employeeColumns = columns;
-
-                if (!$scope.state.form.constraintsDataset) {
-                    $scope.state.schemaLoading = false;
-                    return;
-                }
-
-                loadSchema($scope.state.form.constraintsDataset, function(constraintColumns) {
-                    $scope.state.constraintsColumns = constraintColumns;
-                    $scope.state.schemaLoading = false;
-                }, function() {
-                    $scope.state.schemaLoading = false;
-                });
-            }, function() {
-                $scope.state.schemaLoading = false;
-            });
-        }
-
-        function loadSchema(datasetName, onSuccess, onFailure) {
-            $http.get(getWebAppBackendUrl("get-schema/" + encodeURIComponent(datasetName)))
-                .then(function(response) {
-                    onSuccess(response.data.columns || []);
-                }, function(error) {
-                    handleBackendError(error, "Unable to read schema for '" + datasetName + "'.");
-                    if (onFailure) {
-                        onFailure();
-                    }
-                });
-        }
-
         function buildRequestPayload() {
-            if ($scope.state.form.useDemo) {
-                return {
-                    use_demo: true,
-                    load_demo_constraints: true
-                };
-            }
-
             return {
                 use_demo: false,
                 employee_dataset: $scope.state.form.employeeDataset,
                 constraints_dataset: $scope.state.form.constraintsDataset || null
             };
-        }
-
-        function normalizeDatasetOptions(items) {
-            return items
-                .map(function(item) {
-                    if (typeof item === "string") {
-                        return { id: item, label: item };
-                    }
-
-                    var datasetId = item.name || item.id || item.label;
-                    if (!datasetId) {
-                        return null;
-                    }
-
-                    return {
-                        id: datasetId,
-                        label: item.smartName || item.label || datasetId
-                    };
-                })
-                .filter(Boolean)
-                .sort(function(left, right) {
-                    return left.label.localeCompare(right.label);
-                });
         }
 
         function collectFilterOptions(nodes) {
@@ -927,7 +768,7 @@
                 return emptyDiagram(
                     filterResult.hasFilters
                         ? "No employees match the current search and filter selection."
-                        : "Load an employee dataset to render the org chart."
+                        : "No hierarchy records are available in the configured source."
                 );
             }
 
@@ -1238,12 +1079,12 @@
             syncViewportSize();
 
             var canvas = $scope.state.canvas;
-            var padding = 48;
+            var padding = 16;
             var viewportWidth = Math.max(canvas.viewportWidth, 1);
             var viewportHeight = Math.max(canvas.viewportHeight, 1);
             var scaleX = (viewportWidth - padding) / $scope.state.diagram.width;
             var scaleY = (viewportHeight - padding) / $scope.state.diagram.height;
-            var scale = clamp(Math.min(scaleX, scaleY, 1), canvas.minScale, canvas.maxScale);
+            var scale = clamp(Math.min(scaleX, scaleY, 1.08), canvas.minScale, canvas.maxScale);
 
             canvas.scale = scale;
             canvas.x = (viewportWidth - ($scope.state.diagram.width * scale)) / 2;
@@ -1272,18 +1113,18 @@
             var normalized = (department || "").toLowerCase();
 
             if (normalized === "executive") {
-                return "#8e4b10";
+                return "#f2665f";
             }
             if (normalized === "engineering" || normalized === "data") {
-                return "#0f766e";
+                return "#654ea3";
             }
             if (normalized === "sales") {
-                return "#ad5a1f";
+                return "#fdb515";
             }
             if (normalized === "people") {
-                return "#355c7d";
+                return "#516dc4";
             }
-            return "#54656a";
+            return "#3d3a56";
         }
 
         function isInteractiveTarget(target) {
