@@ -2810,10 +2810,10 @@ body {
 
 .workspace__topline {
     position: relative;
-    z-index: 20;
+    z-index: 80;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
     min-height: auto;
     padding: 0;
@@ -2854,10 +2854,10 @@ body {
 .workspace__menus {
     display: flex;
     justify-content: flex-end;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
     flex: 0 0 auto;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     max-width: min(780px, 54vw);
 }
 
@@ -2868,12 +2868,12 @@ body {
 
 .collapsible-panel {
     position: relative;
-    box-shadow: var(--am-shadow-sm);
+    box-shadow: 0 1px 2px rgba(48, 46, 69, 0.04), 0 6px 14px rgba(48, 46, 69, 0.05);
 }
 
 .collapsible-panel__header {
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     min-height: 34px;
     margin-bottom: 0;
 }
@@ -2889,6 +2889,7 @@ body {
 .collapsible-panel__header h3 {
     font-size: 15px;
     line-height: 1.2;
+    white-space: nowrap;
 }
 
 .collapsible-panel__header .section-label {
@@ -2908,6 +2909,7 @@ body {
 
 .menu-toggle {
     min-height: 30px;
+    padding: 0 16px;
     white-space: nowrap;
 }
 
@@ -2918,10 +2920,10 @@ body {
     bottom: auto;
     left: auto;
     display: block;
-    min-width: 310px;
-    max-width: 360px;
+    min-width: 340px;
+    max-width: 420px;
     max-height: none;
-    padding: 8px 14px;
+    padding: 7px 8px 7px 14px;
     overflow: visible;
 }
 
@@ -2984,14 +2986,14 @@ body {
     justify-content: flex-end;
     gap: 8px;
     flex: 0 0 auto;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .filters-grid {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    z-index: 40;
+    z-index: 90;
     display: grid;
     width: min(820px, calc(100vw - 64px));
     max-height: min(70vh, 620px);
@@ -3001,9 +3003,9 @@ body {
     margin-top: 0;
     padding: 14px;
     overflow: auto;
-    border: 1px solid rgba(48, 46, 69, 0.12);
+    border: 1px solid rgba(48, 46, 69, 0.14);
     border-radius: var(--am-radius);
-    background: rgba(255, 255, 255, 0.98);
+    background: #ffffff;
     box-shadow: var(--am-shadow-lg);
 }
 
@@ -3137,10 +3139,9 @@ body {
 }
 
 .details-card--session {
-    min-width: 320px;
-    max-width: 380px;
-    padding: 8px 14px;
-    box-shadow: var(--am-shadow-sm);
+    min-width: 250px;
+    max-width: 300px;
+    padding: 7px 8px 7px 14px;
 }
 
 .details-card--session::before {
@@ -3154,11 +3155,13 @@ body {
 
 .session-header {
     align-items: center;
+    justify-content: space-between;
     margin-bottom: 0;
 }
 
 .session-header h3 {
     font-size: 15px;
+    white-space: nowrap;
 }
 
 .session-header__actions {
@@ -3173,6 +3176,11 @@ body {
     margin-bottom: 0;
 }
 
+.workspace__session--expanded .details-card--session {
+    width: min(760px, calc(100vw - 64px));
+    max-width: min(760px, calc(100vw - 64px));
+}
+
 .workspace__session--expanded .session-grid {
     max-height: min(72vh, 660px);
     overflow: auto;
@@ -3182,16 +3190,16 @@ body {
     position: absolute;
     top: calc(100% + 8px);
     right: 0;
-    z-index: 40;
+    z-index: 90;
     width: min(940px, calc(100vw - 64px));
     max-height: min(72vh, 660px);
     grid-template-columns: minmax(300px, 0.9fr) minmax(260px, 0.8fr) minmax(330px, 1fr);
     gap: 12px;
     padding: 14px;
     overflow: auto;
-    border: 1px solid rgba(48, 46, 69, 0.12);
+    border: 1px solid rgba(48, 46, 69, 0.14);
     border-radius: var(--am-radius);
-    background: rgba(255, 255, 255, 0.98);
+    background: #ffffff;
     box-shadow: var(--am-shadow-lg);
 }
 
@@ -3317,6 +3325,7 @@ body {
 @media (max-width: 760px) {
     .workspace__menus {
         justify-content: stretch;
+        flex-wrap: wrap;
     }
 
     .workspace__menu,
