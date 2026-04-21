@@ -2729,13 +2729,19 @@ body {
     }
 }
 
-/* Final editor layout: compact Amdocs operations surface with normal scrolling. */
+/* Authoritative editor layout: compact Amdocs operations surface with normal scrolling. */
 html,
 body {
     min-height: 100%;
     height: auto;
     overflow-x: hidden;
     overflow-y: auto;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 body {
@@ -2831,17 +2837,22 @@ body {
 }
 
 .workspace__filters {
-    position: relative;
-    z-index: 2;
+    display: block;
+    position: static;
+    z-index: auto;
     min-height: 0;
     overflow: visible;
 }
 
 .details-card--filters {
     position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
     display: grid;
-    grid-template-columns: minmax(118px, 0.42fr) minmax(250px, 1.35fr) repeat(3, minmax(150px, 1fr)) auto;
-    gap: 9px;
+    grid-template-columns: minmax(124px, auto) minmax(260px, 1.35fr) repeat(3, minmax(150px, 1fr)) auto;
+    gap: 10px;
     align-items: end;
     max-height: none;
     padding: 11px 14px 12px;
@@ -2882,6 +2893,12 @@ body {
     gap: 4px;
 }
 
+.details-card--filters .field + .field,
+.details-card--filters .field + .toggle-field,
+.details-card--filters .toggle-field--sidebar {
+    margin-top: 0;
+}
+
 .details-card--filters .field select,
 .details-card--filters .field input,
 .details-card--filters .toggle-field--sidebar {
@@ -2898,7 +2915,7 @@ body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(320px, 20vw, 380px);
     align-items: start;
-    gap: 14px;
+    gap: 16px;
     min-height: 0;
 }
 
@@ -2913,7 +2930,7 @@ body {
     height: auto;
     min-height: 0;
     padding: 12px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .canvas-card__header--stacked {
@@ -2952,25 +2969,27 @@ body {
 }
 
 .tree-viewport {
-    height: clamp(430px, calc(100vh - 330px), 640px);
-    min-height: 430px;
+    height: clamp(520px, 65vh, 760px);
+    min-height: 520px;
     margin-top: 8px;
 }
 
 .workspace__details {
+    grid-column: auto;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    align-self: start;
     min-height: 0;
     overflow: visible;
 }
 
 .details-card--selected,
 .details-card--empty {
-    position: sticky;
-    top: 82px;
-    max-height: calc(100vh - 102px);
-    overflow: auto;
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow: visible;
 }
 
 .details-card--selected {
@@ -3050,8 +3069,8 @@ body {
 }
 
 .workspace__session--expanded .session-grid {
-    max-height: 190px;
-    overflow: auto;
+    max-height: none;
+    overflow: visible;
 }
 
 .session-grid {
@@ -3100,11 +3119,15 @@ body {
     }
 
     .details-card--filters {
-        grid-template-columns: minmax(104px, 0.38fr) minmax(200px, 1.2fr) repeat(3, minmax(124px, 1fr)) auto;
+        grid-template-columns: minmax(116px, auto) minmax(220px, 1.3fr) repeat(3, minmax(128px, 1fr)) auto;
     }
 
     .workspace__content {
-        grid-template-columns: minmax(0, 1fr) 310px;
+        grid-template-columns: minmax(0, 1fr) 340px;
+    }
+
+    .workspace__details {
+        grid-column: auto;
     }
 }
 
@@ -3113,7 +3136,15 @@ body {
         padding: 14px 18px 22px;
     }
 
-    .details-card--filters,
+    .details-card--filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .details-card--filters .details-card__header,
+    .details-card--filters .toggle-field--sidebar {
+        grid-column: 1 / -1;
+    }
+
     .workspace__content {
         grid-template-columns: 1fr;
     }
@@ -3128,7 +3159,33 @@ body {
         max-height: none;
     }
 
+    .session-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .session-block {
+        padding-right: 0;
+        padding-bottom: 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--am-line);
+    }
+
+    .session-block:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
     .tree-viewport {
         height: 560px;
+    }
+}
+
+@media (max-width: 760px) {
+    .details-card--filters {
+        grid-template-columns: 1fr;
+    }
+
+    .tree-viewport {
+        height: 520px;
     }
 }
