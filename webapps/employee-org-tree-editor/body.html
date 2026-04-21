@@ -150,12 +150,6 @@
                                 </div>
                                 <div class="session-header__actions">
                                     <button type="button"
-                                            class="text-button text-button--muted"
-                                            ng-if="state.ui.sessionExpanded && state.lastSavedPayload"
-                                            ng-click="resetUnsavedMoves()">
-                                        Restore baseline
-                                    </button>
-                                    <button type="button"
                                             class="secondary-button session-toggle menu-toggle"
                                             ng-click="toggleSession()"
                                             ng-attr-aria-expanded="{{state.ui.sessionExpanded}}">
@@ -165,6 +159,19 @@
                             </div>
 
                             <div class="session-grid" ng-show="state.ui.sessionExpanded">
+                                <div class="session-overlay-header">
+                                    <div>
+                                        <p class="section-label">Session details</p>
+                                        <h4>Workspace state</h4>
+                                    </div>
+                                    <button type="button"
+                                            class="text-button text-button--muted"
+                                            ng-if="state.lastSavedPayload"
+                                            ng-click="resetUnsavedMoves()">
+                                        Restore baseline
+                                    </button>
+                                </div>
+
                                 <div class="session-block">
                                     <div class="metric-list metric-list--session">
                                         <div class="metric-item metric-item--count">
