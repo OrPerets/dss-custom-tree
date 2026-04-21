@@ -48,6 +48,9 @@
                 statuses: []
             },
             filters: defaultFilters(),
+            ui: {
+                sessionExpanded: false
+            },
             drag: defaultDragState(),
             diagram: emptyDiagram("Loading the configured hierarchy source."),
             canvas: {
@@ -430,6 +433,14 @@
 
         $scope.focusSelectedNode = function() {
             focusNode($scope.state.selectedNode);
+        };
+
+        $scope.toggleSession = function() {
+            $scope.state.ui.sessionExpanded = !$scope.state.ui.sessionExpanded;
+            $timeout(function() {
+                attachViewport();
+                fitDiagramToViewport();
+            });
         };
 
         $scope.beginCanvasPan = function($event) {
