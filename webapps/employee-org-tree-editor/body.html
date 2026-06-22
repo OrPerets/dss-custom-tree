@@ -15,8 +15,8 @@
                     <span class="topbar-icon__mark"></span>
                 </div>
                 <div>
-                    <span class="topbar-title">Organization Tree Editor</span>
-                    <span class="topbar-sub">Amdocs workforce design workspace</span>
+                    <span class="topbar-title">Amdocs Org Designer</span>
+                    <span class="topbar-sub">Moves / capacity / rules</span>
                 </div>
             </div>
             <div class="topbar-meta">
@@ -56,16 +56,30 @@
 
         <section class="workspace" ng-if="state.mode === 'workspace'">
             <div class="workspace__topline">
-                <div class="workspace__summary">
-                    <strong class="workspace__count">{{state.treePayload.meta.employee_count}} employees</strong>
-                    <div class="workspace-kpis">
-                        <span class="summary-pill">Root <strong>{{state.treePayload.meta.root_employee_id}}</strong></span>
-                        <span class="summary-pill">Visible <strong>{{getVisibleEmployeesLabel()}}</strong></span>
-                        <span class="summary-pill summary-pill--accent">Source <strong>{{state.treePayload.meta.source.employee_dataset}}</strong></span>
-                        <span class="state-chip">DSS datasets</span>
-                        <span class="state-chip state-chip--warning" ng-if="state.treePayload.meta.warning_count">{{state.treePayload.meta.warning_count}} warnings</span>
-                        <span class="state-chip state-chip--info" ng-if="getUnsavedMoveCount()">{{getUnsavedMoveCount()}} unsaved moves</span>
+                <div class="workspace__summary visual-summary">
+                    <div class="signal-card signal-card--people">
+                        <span class="signal-card__icon"></span>
+                        <strong>{{state.treePayload.meta.employee_count}}</strong>
+                        <span>People</span>
                     </div>
+                    <div class="signal-card signal-card--visible">
+                        <span class="signal-card__icon"></span>
+                        <strong>{{getVisibleRatioLabel()}}</strong>
+                        <span>Visible</span>
+                    </div>
+                    <div class="signal-card signal-card--warnings" ng-class="{'signal-card--quiet': !state.treePayload.meta.warning_count}">
+                        <span class="signal-card__icon"></span>
+                        <strong>{{getWarningTotalLabel()}}</strong>
+                        <span>Warnings</span>
+                    </div>
+                    <div class="signal-card signal-card--moves" ng-class="{'signal-card--quiet': !getUnsavedMoveCount()}">
+                        <span class="signal-card__icon"></span>
+                        <strong>{{getPendingMovesShortLabel()}}</strong>
+                        <span>Moves</span>
+                    </div>
+                    <span class="source-chip" title="{{state.treePayload.meta.source.employee_dataset}}">
+                        {{state.treePayload.meta.source.employee_dataset}}
+                    </span>
                 </div>
 
                 <div class="workspace__menus">
@@ -74,17 +88,19 @@
                             <div class="details-card__header filters-header collapsible-panel__header">
                                 <div>
                                     <p class="section-label">Filters</p>
-                                    <h3>Refine tree</h3>
+                                    <h3>Filter</h3>
                                     <p class="collapsible-summary">{{getFilterSummaryLabel()}}</p>
                                 </div>
                                 <div class="filters-header__actions">
                                     <button type="button"
-                                            class="secondary-button menu-toggle"
+                                            class="secondary-button icon-button menu-toggle"
                                             ng-click="toggleFilters()"
                                             aria-haspopup="true"
                                             aria-controls="filters-dropdown-panel"
-                                            ng-attr-aria-expanded="{{state.ui.filtersExpanded}}">
-                                        {{state.ui.filtersExpanded ? "Hide filters" : "Show filters"}}
+                                            ng-attr-aria-expanded="{{state.ui.filtersExpanded}}"
+                                            title="{{state.ui.filtersExpanded ? 'Close filters' : 'Open filters'}}">
+                                        <span class="button-icon button-icon--filter"></span>
+                                        <span class="sr-only">{{state.ui.filtersExpanded ? "Close filters" : "Open filters"}}</span>
                                     </button>
                                 </div>
                             </div>
@@ -98,22 +114,22 @@
                              ng-style="state.ui.filtersMenuStyle">
                             <div class="filters-overlay-header">
                                 <div>
-                                    <p class="section-label">Filters</p>
-                                    <h4>Refine visible employees</h4>
+                                    <p class="section-label">Scope</p>
+                                    <h4>Filters</h4>
                                 </div>
                                 <button type="button"
                                         class="text-button text-button--muted"
                                         ng-if="getActiveFilterCount()"
                                         ng-click="resetFilters()">
-                                    Reset filters
+                                    Reset
                                 </button>
                             </div>
 
                             <div class="filters-controls-grid">
                                 <label class="field">
-                                    <span class="field__label">Search employees</span>
+                                    <span class="field__label">Search</span>
                                     <input type="search"
-                                           placeholder="Name, employee ID, or title"
+                                           placeholder="Name, ID, title"
                                            ng-model="state.filters.search"
                                            ng-model-options="{ debounce: 120 }"
                                            ng-change="applyFilters()">
@@ -151,7 +167,7 @@
 
                                 <label class="toggle-field toggle-field--sidebar">
                                     <input type="checkbox" ng-model="state.filters.onlyWarnings" ng-change="applyFilters()">
-                                    <span>Warnings only</span>
+                                    <span>Warnings</span>
                                 </label>
                             </div>
                         </div>
@@ -166,12 +182,14 @@
                                 </div>
                                 <div class="session-header__actions">
                                     <button type="button"
-                                            class="secondary-button session-toggle menu-toggle"
+                                            class="secondary-button icon-button session-toggle menu-toggle"
                                             ng-click="toggleSession()"
                                             aria-haspopup="true"
                                             aria-controls="session-dropdown-panel"
-                                            ng-attr-aria-expanded="{{state.ui.sessionExpanded}}">
-                                        {{state.ui.sessionExpanded ? "Hide session" : "Show session"}}
+                                            ng-attr-aria-expanded="{{state.ui.sessionExpanded}}"
+                                            title="{{state.ui.sessionExpanded ? 'Close session' : 'Open session'}}">
+                                        <span class="button-icon button-icon--session"></span>
+                                        <span class="sr-only">{{state.ui.sessionExpanded ? "Close session" : "Open session"}}</span>
                                     </button>
                                 </div>
                             </div>
@@ -185,56 +203,56 @@
                              ng-style="state.ui.sessionMenuStyle">
                             <div class="session-overlay-header">
                                 <div>
-                                    <p class="section-label">Session details</p>
-                                    <h4>Workspace state</h4>
+                                    <p class="section-label">State</p>
+                                    <h4>Session</h4>
                                 </div>
                                 <button type="button"
                                         class="text-button text-button--muted"
                                         ng-if="state.lastSavedPayload"
                                         ng-click="resetUnsavedMoves()">
-                                    Restore baseline
+                                    Restore
                                 </button>
                             </div>
 
                             <div class="session-block">
                                 <div class="metric-list metric-list--session">
                                     <div class="metric-item metric-item--count">
-                                        <span>Matched</span>
+                                        <span>Match</span>
                                         <strong>{{state.diagram.matchedCount}}</strong>
                                     </div>
                                     <div class="metric-item">
-                                        <span>Last saved</span>
+                                        <span>Saved</span>
                                         <strong>{{getLastSavedLabel()}}</strong>
                                     </div>
                                     <div class="metric-item" ng-if="state.lastSavedSnapshot && state.lastSavedSnapshot.saved_at">
-                                        <span>Saved at</span>
+                                        <span>Time</span>
                                         <strong>{{state.lastSavedSnapshot.saved_at}}</strong>
                                     </div>
                                     <div class="metric-item">
-                                        <span>Employees source</span>
+                                        <span>Source</span>
                                         <strong>{{state.treePayload.meta.source.employee_dataset}}</strong>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="session-block">
-                                <p class="section-label">Recent moves</p>
+                                <p class="section-label">Moves</p>
                                 <ul class="change-log change-log--inline" ng-if="state.treePayload.change_log.length">
                                     <li class="change-log__entry" ng-repeat="entry in state.treePayload.change_log | limitTo:3 track by $index">
                                         <strong>{{entry.employee_name}}</strong>
                                         <span>{{entry.old_manager_name || entry.old_manager_id || "Root"}} -> {{entry.new_manager_name}}</span>
                                     </li>
                                 </ul>
-                                <p class="empty-note empty-note--session" ng-if="!state.treePayload.change_log.length">Accepted manager changes will appear here.</p>
+                                <p class="empty-note empty-note--session" ng-if="!state.treePayload.change_log.length">No moves yet.</p>
                             </div>
 
                             <div class="session-block" ng-if="canUseSnapshotStorage()">
                                 <div class="details-card__header details-card__header--session">
                                     <div>
                                         <p class="section-label">Baselines</p>
-                                        <h4>Saved snapshots</h4>
+                                        <h4>Snapshots</h4>
                                     </div>
-                                    <span class="state-chip" ng-if="state.snapshotsLoading">Refreshing</span>
+                                    <span class="state-chip" ng-if="state.snapshotsLoading">Sync</span>
                                 </div>
 
                                 <div class="session-actions">
@@ -259,17 +277,17 @@
                                                 class="secondary-button"
                                                 ng-click="saveSnapshot()"
                                                 ng-disabled="state.snapshotSaving || !state.treePayload">
-                                            {{state.snapshotSaving ? "Saving..." : "Save current"}}
+                                            {{state.snapshotSaving ? "Saving..." : "Save"}}
                                         </button>
                                     </div>
                                 </div>
 
-                                <p class="empty-note" ng-if="!state.snapshotOptions.length">No saved baselines yet for this source.</p>
+                                <p class="empty-note" ng-if="!state.snapshotOptions.length">No baselines.</p>
                             </div>
 
                             <div class="session-block" ng-if="!canUseSnapshotStorage()">
                                 <p class="section-label">Baselines</p>
-                                <p class="empty-note">Set a baseline folder in DSS to save and reload baselines.</p>
+                                <p class="empty-note">Set a DSS folder for baselines.</p>
                             </div>
                         </div>
                     </div>
@@ -283,30 +301,39 @@
                             <div class="canvas-toolbar">
                                 <div class="canvas-actions">
                                     <button type="button"
-                                            class="secondary-button"
+                                            class="secondary-button action-button action-button--save"
                                             ng-click="saveSnapshot()"
-                                            ng-disabled="state.snapshotSaving || !state.treePayload">
-                                        {{state.snapshotSaving ? "Saving baseline..." : "Save baseline"}}
+                                            ng-disabled="state.snapshotSaving || !state.treePayload"
+                                            title="Save baseline">
+                                        <span class="button-icon button-icon--save"></span>
+                                        <span>{{state.snapshotSaving ? "Saving" : "Save"}}</span>
                                     </button>
                                     <button type="button"
-                                            class="secondary-button"
+                                            class="secondary-button action-button"
                                             ng-click="exportHierarchy()"
-                                            ng-disabled="state.hierarchyExporting || !state.treePayload">
-                                        {{state.hierarchyExporting ? "Exporting..." : "Export hierarchy"}}
+                                            ng-disabled="state.hierarchyExporting || !state.treePayload"
+                                            title="Export hierarchy">
+                                        <span class="button-icon button-icon--tree"></span>
+                                        <span>{{state.hierarchyExporting ? "Exporting" : "Tree"}}</span>
                                     </button>
                                     <button type="button"
-                                            class="secondary-button"
+                                            class="secondary-button action-button"
                                             ng-click="exportMoveLog()"
-                                            ng-disabled="state.moveLogExporting || !state.treePayload">
-                                        {{state.moveLogExporting ? "Exporting..." : "Export moves"}}
+                                            ng-disabled="state.moveLogExporting || !state.treePayload"
+                                            title="Export moves">
+                                        <span class="button-icon button-icon--moves"></span>
+                                        <span>{{state.moveLogExporting ? "Exporting" : "Moves"}}</span>
                                     </button>
-                                    <button type="button" class="secondary-button" ng-click="loadOrgTree()">Refresh</button>
+                                    <button type="button" class="secondary-button action-button" ng-click="loadOrgTree()" title="Refresh">
+                                        <span class="button-icon button-icon--refresh"></span>
+                                        <span>Sync</span>
+                                    </button>
                                 </div>
                                 <div class="canvas-controls">
-                                    <button type="button" class="secondary-button canvas-control" ng-click="zoomOut()">-</button>
-                                    <button type="button" class="secondary-button canvas-control" ng-click="zoomIn()">+</button>
-                                    <button type="button" class="secondary-button canvas-control" ng-click="fitToScreen()">Fit</button>
-                                    <button type="button" class="secondary-button canvas-control" ng-click="focusSelectedNode()" ng-disabled="!state.selectedNode">Focus</button>
+                                    <button type="button" class="secondary-button canvas-control" ng-click="zoomOut()" title="Zoom out">-</button>
+                                    <button type="button" class="secondary-button canvas-control" ng-click="zoomIn()" title="Zoom in">+</button>
+                                    <button type="button" class="secondary-button canvas-control" ng-click="fitToScreen()" title="Fit tree">Fit</button>
+                                    <button type="button" class="secondary-button canvas-control" ng-click="focusSelectedNode()" ng-disabled="!state.selectedNode" title="Focus selected employee">Focus</button>
                                 </div>
                             </div>
                         </div>
@@ -352,24 +379,24 @@
 
                                         <div class="org-node__meta">
                                             <span class="org-node__meta-item">
-                                                <span class="org-node__meta-label">Location</span>
+                                                <span class="org-node__meta-label">Site</span>
                                                 <span>{{renderNode.data.location}}</span>
                                             </span>
                                             <span class="org-node__meta-item">
-                                                <span class="org-node__meta-label">Level</span>
+                                                <span class="org-node__meta-label">Lvl</span>
                                                 <span>{{renderNode.data.level}}</span>
                                             </span>
                                         </div>
 
                                         <div class="org-node__signals" ng-if="renderNode.data.manager_rule || renderNode.data.warnings.length">
-                                            <span class="node-badge node-badge--rule" ng-if="renderNode.data.manager_rule">Mgr rule</span>
+                                            <span class="node-badge node-badge--rule" ng-if="renderNode.data.manager_rule">Rule</span>
                                             <span class="node-badge node-badge--warning" ng-if="renderNode.data.warnings.length">{{getWarningCountLabel(renderNode.data)}}</span>
                                         </div>
 
                                         <div class="org-node__footer">
-                                            <span class="org-node__readiness">{{renderNode.data.warnings.length ? "Needs review" : "Move ready"}}</span>
+                                            <span class="org-node__readiness">{{renderNode.data.warnings.length ? "Review" : "Ready"}}</span>
                                             <span class="capacity-pill" ng-class="getCapacityTone(renderNode.data)">
-                                                {{getCapacityLabel(renderNode.data)}}
+                                                {{getCapacityShortLabel(renderNode.data)}}
                                             </span>
                                         </div>
                                     </button>
@@ -378,7 +405,8 @@
                                           org-drag-handle
                                           employee-id="renderNode.employee_id"
                                           title="Drag to move this employee">
-                                        Move
+                                        <span class="drag-grip" aria-hidden="true"></span>
+                                        <span class="sr-only">Move</span>
                                     </span>
                                 </div>
                             </div>
@@ -388,7 +416,7 @@
 
                 <aside class="workspace__details">
                     <div class="details-card details-card--selected" ng-if="state.selectedNode">
-                        <p class="section-label">Selected employee</p>
+                        <p class="section-label">Selected</p>
                         <div class="details-summary">
                             <span class="org-node__avatar org-node__avatar--large">{{getAvatarLabel(state.selectedNode)}}</span>
                             <div>
@@ -400,17 +428,17 @@
                         <div class="details-badges">
                             <span class="status-pill" ng-class="getStatusTone(state.selectedNode)">{{state.selectedNode.employment_status}}</span>
                             <span class="capacity-pill" ng-class="getCapacityTone(state.selectedNode)">{{getCapacityLabel(state.selectedNode)}}</span>
-                            <span class="node-badge node-badge--rule" ng-if="state.selectedNode.manager_rule">Manager rule</span>
+                            <span class="node-badge node-badge--rule" ng-if="state.selectedNode.manager_rule">Rule</span>
                             <span class="node-badge node-badge--warning" ng-if="state.selectedNode.warnings.length">{{getWarningCountLabel(state.selectedNode)}}</span>
                         </div>
 
                         <dl class="details-grid">
-                            <div><dt>Employee ID</dt><dd>{{state.selectedNode.employee_id}}</dd></div>
-                            <div><dt>Manager</dt><dd>{{getManagerLabel(state.selectedNode)}}</dd></div>
-                            <div><dt>Department</dt><dd>{{state.selectedNode.department}}</dd></div>
-                            <div><dt>Location</dt><dd>{{state.selectedNode.location}}</dd></div>
-                            <div><dt>Level</dt><dd>{{state.selectedNode.level}}</dd></div>
-                            <div><dt>Capacity</dt><dd>{{getCapacityLabel(state.selectedNode)}}</dd></div>
+                            <div><dt>ID</dt><dd>{{state.selectedNode.employee_id}}</dd></div>
+                            <div><dt>Mgr</dt><dd>{{getManagerLabel(state.selectedNode)}}</dd></div>
+                            <div><dt>Dept</dt><dd>{{state.selectedNode.department}}</dd></div>
+                            <div><dt>Site</dt><dd>{{state.selectedNode.location}}</dd></div>
+                            <div><dt>Lvl</dt><dd>{{state.selectedNode.level}}</dd></div>
+                            <div><dt>Cap</dt><dd>{{getCapacityShortLabel(state.selectedNode)}}</dd></div>
                         </dl>
 
                         <div class="details-section" ng-if="state.drag.employeeId === state.selectedNode.employee_id && state.drag.preview">
@@ -426,7 +454,7 @@
                         </div>
 
                         <div class="details-section" ng-if="state.selectedNode.manager_rule">
-                            <h4>Manager rule</h4>
+                            <h4>Rule</h4>
                             <p>{{getRuleSummary(state.selectedNode)}}</p>
                             <ul class="detail-list">
                                 <li ng-if="state.selectedNode.manager_rule.allowed_departments.length">Allowed departments: {{state.selectedNode.manager_rule.allowed_departments.join(", ")}}</li>
@@ -439,9 +467,9 @@
                     </div>
 
                     <div class="details-card details-card--empty" ng-if="!state.selectedNode">
-                        <p class="section-label">Selected employee</p>
-                        <h3>No employee selected</h3>
-                        <p class="empty-note">Select a card in the hierarchy to inspect details, warnings, and manager rules.</p>
+                        <p class="section-label">Selected</p>
+                        <h3>Select a node</h3>
+                        <p class="empty-note">Details appear here.</p>
                     </div>
 
                     <div class="details-card"
@@ -453,7 +481,7 @@
                          }">
                         <div class="details-card__header">
                             <div>
-                                <p class="section-label">Workspace feedback</p>
+                                <p class="section-label">Feedback</p>
                                 <h3>{{state.moveFeedback.title}}</h3>
                             </div>
                             <button type="button" class="text-button text-button--muted" ng-click="dismissMoveFeedback()">Dismiss</button>

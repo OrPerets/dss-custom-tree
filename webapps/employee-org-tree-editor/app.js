@@ -130,6 +130,13 @@
             return node.direct_reports_count + " / " + (node.max_direct_reports == null ? "\u221e" : node.max_direct_reports) + " reports";
         };
 
+        $scope.getCapacityShortLabel = function(node) {
+            if (!node) {
+                return "";
+            }
+            return node.direct_reports_count + "/" + (node.max_direct_reports == null ? "\u221e" : node.max_direct_reports);
+        };
+
         $scope.getWarningLabel = function(warning) {
             if (!warning) {
                 return "";
@@ -177,6 +184,21 @@
                 return "No employees";
             }
             return $scope.state.diagram.visibleCount + " of " + $scope.state.diagram.totalCount + " visible";
+        };
+
+        $scope.getVisibleRatioLabel = function() {
+            if (!$scope.state.diagram.totalCount) {
+                return "0/0";
+            }
+            return $scope.state.diagram.visibleCount + "/" + $scope.state.diagram.totalCount;
+        };
+
+        $scope.getWarningTotalLabel = function() {
+            return String(($scope.state.treePayload && $scope.state.treePayload.meta && $scope.state.treePayload.meta.warning_count) || 0);
+        };
+
+        $scope.getPendingMovesShortLabel = function() {
+            return String($scope.getUnsavedMoveCount());
         };
 
         $scope.canUseSnapshotStorage = function() {
