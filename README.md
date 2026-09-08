@@ -14,6 +14,15 @@ The webapp supports one org-tree workflow end to end:
 - Save and reload org snapshots.
 - Export the current hierarchy and move audit trail as CSV artifacts.
 
+## Organization workspace
+
+The chart starts with three reporting levels. Expand a manager’s direct reports or choose **All levels** to explore further. Search includes people in collapsed teams. Select a person for employee details, reporting rules, or a validated manager change.
+
+**Changes & versions** contains recent changes, saved versions and the source controls. **Save version** requires a configured baseline folder. **Export** downloads the current hierarchy.
+
+- [UI review and verification](docs/ui-review-2026-09-07.md)
+- [Local interactive preview](demo/README.md)
+
 ## Inputs
 
 - Required employee dataset
@@ -24,6 +33,7 @@ Reference material:
 
 - [docs/employee-tree-input-spec.md](docs/employee-tree-input-spec.md)
 - [docs/employee-tree-mockup.md](docs/employee-tree-mockup.md)
+- [Snowflake DWH.HR mapping, extraction SQL and validation](integrations/snowflake/README.md)
 
 ## Repository Guide
 
@@ -39,7 +49,7 @@ Reference material:
 - `PYTHONPATH=python-lib pytest tests/python/unit`
 - `node --check webapps/employee-org-tree-editor/app.js`
 - `python3 -m py_compile python-lib/employee_tree/service.py webapps/employee-org-tree-editor/backend.py`
-- `python3 /Users/orperets/.codex/plugins/cache/local-workspace/dataiku-plugin-developer/0.1.0/scripts/verify_dataiku_plugin.py .`
+- `python3 plugins/dataiku-plugin-developer/scripts/verify_dataiku_plugin.py .`
 
 ## Packaging
 

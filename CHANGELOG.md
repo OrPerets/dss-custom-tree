@@ -1,5 +1,16 @@
 # Changelog
 
+## Version 2.1.1 (2026-09-07)
+* Reduced header, title and toolbar height to give the organization editor more space.
+* Combined the organization title and counts into one row and removed introductory text.
+* Expanded the chart viewport and retained responsive controls and dropdowns.
+
+## Version 2.1.0 (2026-09-07)
+* Simplified the organization workspace, card content, controls and Amdocs styling.
+* Added expandable reporting levels, full-organization search and on-demand employee details.
+* Added an accessible manager-change form using the existing move validation.
+* Added touch panning, a local sample-data preview and browser regression coverage.
+
 ## Version 2.0.0 (2026-04-20)
 * Rebuilt the plugin as an employee org-tree editor for Dataiku DSS
 * Added hierarchy validation, drag-and-drop re-parenting, snapshot save/load, and CSV exports

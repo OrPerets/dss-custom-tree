@@ -1,5 +1,7 @@
 # Employee Org Tree Mockup
 
+> Historical concept. The current implementation and information hierarchy are documented in [the September UI review](ui-review-2026-09-07.md).
+
 ## Primary Screen
 
 ```text

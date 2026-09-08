@@ -1,11 +1,25 @@
-# Signal Quiet
+# Amdocs organization workspace design
 
-Signal Quiet treats interfaces as instruments of selective emphasis. Space is not a void to be filled but a deliberate filter that allows only the strongest actions and the clearest states to remain visible. Surfaces should feel meticulously crafted and pared back through deep expertise, with each block earning its place through function, rhythm, and calm visual tension. Nothing verbose survives this system; information should arrive as shape, contrast, and position before it arrives as text.
+The organization is the primary workspace. Show reporting relationships clearly, keep names readable, and reveal employee information only when it helps the current decision.
 
-The palette stays anchored in Amdocs color memory, but color is used with restraint and precision rather than saturation by default. Inked plum grounds the structure, coral and pink act as directional accents, and pale blue and rose create atmospheric lift instead of decorative noise. Every tint should look painstakingly calibrated, as if adjusted through countless rounds by someone operating at a master level of execution. Color should mark hierarchy, readiness, and focus, never compensate for weak composition.
+## Information hierarchy
 
-Scale follows a strict hierarchy of confidence. Large serif headlines establish intent in a single gesture, while compact sans-serif labels and chips behave like quiet instrumentation around the edges. Repetition matters: rounded forms, aligned pills, trimmed metadata, and disciplined card geometry should feel meticulously crafted rather than generated. The rhythm must suggest patient refinement, with each spacing decision carrying the product of careful, expert judgment.
+1. Organization title and a compact count of people, departments and items needing review.
+2. Visible search, optional filters, reporting-level selection and export.
+3. The organization chart, initially showing three levels with expandable teams.
+4. Employee details on selection; employee information, reporting rules and manager changes use disclosures.
+5. Changes and saved versions in one on-demand panel.
 
-Composition favors one dominant field of action supported by a narrow band of context. The eye should land on the main canvas first, then move to setup, session state, and details without friction or competition. Secondary utilities should recede into compact clusters, never fragment the page into equal-weight panels. This balance must feel labored over with painstaking attention, as if the interface had been edited down repeatedly until only the decisive visual beats remained.
+## Visual language
 
-Text is present only as an anchor. Labels should be short, copy should be spare, and long explanations should be replaced by structural cues wherever possible. The overall result should feel pristine, controlled, and unmistakably human-crafted: a minimal system with warmth, tactility, and enough polish to suggest countless hours of deliberate, top-tier workmanship behind every visible choice.
+Use a white surface, a pale neutral canvas, dark plum text and restrained Amdocs pink for selection and focus. Amber marks review items. Color must communicate state rather than classify every department. Use one system sans-serif family and clear, complete business labels.
+
+Cards show name, role, department and direct reports. Avoid repeated active/ready badges, IDs, location/level tiles and decorative strips. Align connectors with card geometry. Keep shadows limited to floating panels and notifications.
+
+## Interaction rules
+
+Search includes collapsed branches and preserves reporting paths. Clearing search restores the previous branch view. Selecting a person opens details; Escape closes the panel and restores focus. All moves follow the existing validation path, whether initiated by drag/drop or the manager selector.
+
+At narrow widths, keep cards readable and allow touch panning. Use Fit for a complete overview. Honor reduced-motion preferences and provide visible keyboard focus, accessible control names, and recoverable empty/error states.
+
+See [the September UI review](ui-review-2026-09-07.md) for implementation scope and validation evidence.

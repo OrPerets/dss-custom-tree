@@ -1,11 +1,11 @@
 (function() {
     "use strict";
 
-    var NODE_WIDTH = 264;
-    var NODE_HEIGHT = 184;
-    var HORIZONTAL_GAP = 76;
-    var VERTICAL_GAP = 144;
-    var DIAGRAM_PADDING = 68;
+    var NODE_WIDTH = 252;
+    var NODE_HEIGHT = 148;
+    var HORIZONTAL_GAP = 32;
+    var VERTICAL_GAP = 56;
+    var DIAGRAM_PADDING = 32;
     var ZOOM_STEP = 1.14;
 
     var app = angular.module("employeeOrgTreeApp", []);
@@ -51,6 +51,10 @@
             ui: {
                 filtersExpanded: false,
                 sessionExpanded: false,
+                detailsExpanded: false,
+                visibleLevels: "3",
+                collapsedNodes: {},
+                newManagerId: null,
                 filtersMenuStyle: {},
                 sessionMenuStyle: {}
             },
@@ -93,10 +97,74 @@
                 return;
             }
             $scope.state.selectedNode = node;
+            $scope.state.ui.detailsExpanded = true;
+            $scope.state.ui.newManagerId = null;
+            $timeout(function() {
+                syncViewportSize();
+                focusNode(node);
+                if ($window.innerWidth <= 760) {
+                    var details = $window.document.querySelector(".workspace__details");
+                    if (details) { details.scrollIntoView({block: "nearest"}); }
+                }
+            });
+        };
+
+        $scope.closeDetails = function() {
+            $scope.state.ui.detailsExpanded = false;
+            $timeout(function() {
+                syncViewportSize();
+                var selected = $scope.state.selectedNode;
+                var card = selected && $window.document.querySelector('.org-node__surface[aria-pressed="true"]');
+                if (card) { card.focus({preventScroll: true}); }
+            });
+        };
+
+        $scope.ensureNodeVisible = function(renderNode) {
+            var canvas = $scope.state.canvas;
+            var left = canvas.x + renderNode.x * canvas.scale;
+            var top = canvas.y + renderNode.y * canvas.scale;
+            var right = left + NODE_WIDTH * canvas.scale;
+            var bottom = top + NODE_HEIGHT * canvas.scale;
+            if (left < 8 || right > canvas.viewportWidth - 8 || top < 8 || bottom > canvas.viewportHeight - 8) {
+                canvas.x = canvas.viewportWidth / 2 - renderNode.centerX * canvas.scale;
+                canvas.y = canvas.viewportHeight / 2 - renderNode.centerY * canvas.scale;
+                canvas.hasInteracted = true;
+            }
+        };
+
+        $scope.getZoomLabel = function() {
+            return Math.round($scope.state.canvas.scale * 100) + "%";
+        };
+
+        $scope.setVisibleLevels = function() {
+            setCollapsedLevels();
+            rebuildDiagram(true);
+        };
+
+        $scope.toggleBranch = function(node, event) {
+            if (event) { event.stopPropagation(); }
+            if ($scope.getActiveFilterCount()) { return; }
+            $scope.state.ui.collapsedNodes[node.employee_id] = !$scope.state.ui.collapsedNodes[node.employee_id];
+            $scope.state.ui.visibleLevels = "custom";
+            rebuildDiagram(true);
+        };
+
+        $scope.showWarnings = function() {
+            $scope.state.filters = defaultFilters();
+            $scope.state.filters.onlyWarnings = true;
+            rebuildDiagram(true);
+        };
+
+        $scope.moveSelectedEmployee = function() {
+            if (!$scope.state.selectedNode || !$scope.state.ui.newManagerId || $scope.state.moveSubmitting) { return; }
+            var managerId = $scope.state.ui.newManagerId;
+            $scope.startNodeDrag($scope.state.selectedNode.employee_id);
+            $scope.completeDrop(managerId);
+            $scope.state.ui.newManagerId = null;
         };
 
         $scope.getManagerLabel = function(node) {
-            return node.current_manager_name || node.manager_id || "Root employee";
+            return node.current_manager_name || node.manager_id || "Head of organization";
         };
 
         $scope.getStatusTone = function(node) {
@@ -108,46 +176,6 @@
                 return "status-attention";
             }
             return "status-inactive";
-        };
-
-        $scope.getCapacityTone = function(node) {
-            if (!node || node.max_direct_reports == null) {
-                return "capacity-open";
-            }
-            if (node.capacity_remaining <= 0) {
-                return "capacity-full";
-            }
-            if (node.capacity_remaining === 1) {
-                return "capacity-near";
-            }
-            return "capacity-open";
-        };
-
-        $scope.getCapacityLabel = function(node) {
-            if (!node) {
-                return "";
-            }
-            return node.direct_reports_count + " / " + (node.max_direct_reports == null ? "\u221e" : node.max_direct_reports) + " reports";
-        };
-
-        $scope.getCapacityShortLabel = function(node) {
-            if (!node) {
-                return "";
-            }
-            return node.direct_reports_count + "/" + (node.max_direct_reports == null ? "\u221e" : node.max_direct_reports);
-        };
-
-        $scope.getWarningLabel = function(warning) {
-            if (!warning) {
-                return "";
-            }
-            if (warning.code === "at_capacity") {
-                return "At capacity";
-            }
-            if (warning.code === "employment_status_attention") {
-                return "Status alert";
-            }
-            return "Warning";
         };
 
         $scope.getWarningCountLabel = function(node) {
@@ -179,28 +207,6 @@
             return node.manager_rule.rule_note || "Manager rule configured";
         };
 
-        $scope.getVisibleEmployeesLabel = function() {
-            if (!$scope.state.diagram.totalCount) {
-                return "No employees";
-            }
-            return $scope.state.diagram.visibleCount + " of " + $scope.state.diagram.totalCount + " visible";
-        };
-
-        $scope.getVisibleRatioLabel = function() {
-            if (!$scope.state.diagram.totalCount) {
-                return "0/0";
-            }
-            return $scope.state.diagram.visibleCount + "/" + $scope.state.diagram.totalCount;
-        };
-
-        $scope.getWarningTotalLabel = function() {
-            return String(($scope.state.treePayload && $scope.state.treePayload.meta && $scope.state.treePayload.meta.warning_count) || 0);
-        };
-
-        $scope.getPendingMovesShortLabel = function() {
-            return String($scope.getUnsavedMoveCount());
-        };
-
         $scope.canUseSnapshotStorage = function() {
             return !!$scope.state.form.snapshotFolder;
         };
@@ -218,9 +224,9 @@
         $scope.getPendingMovesLabel = function() {
             var count = $scope.getUnsavedMoveCount();
             if (!count) {
-                return "No pending moves";
+                return "No unsaved changes";
             }
-            return count === 1 ? "1 pending move" : count + " pending moves";
+            return count === 1 ? "1 unsaved change" : count + " unsaved changes";
         };
 
         $scope.getLastSavedLabel = function() {
@@ -228,7 +234,7 @@
                 return $scope.state.lastSavedSnapshot.name;
             }
             if ($scope.state.lastSavedPayload) {
-                return "Current baseline";
+                return "Original organization";
             }
             return "Not saved yet";
         };
@@ -245,8 +251,7 @@
             return {
                 left: renderNode.x + "px",
                 top: renderNode.y + "px",
-                width: NODE_WIDTH + "px",
-                "--node-accent": renderNode.accentColor
+                width: NODE_WIDTH + "px"
             };
         };
 
@@ -292,7 +297,7 @@
         };
 
         $scope.applyFilters = function() {
-            rebuildDiagram(false);
+            rebuildDiagram(true);
         };
 
         $scope.resetFilters = function() {
@@ -365,7 +370,7 @@
         };
 
         $scope.saveSnapshot = function() {
-            if (!$scope.state.treePayload || $scope.state.snapshotSaving) {
+            if (!$scope.state.treePayload || $scope.state.snapshotSaving || !$scope.canUseSnapshotStorage()) {
                 return;
             }
 
@@ -389,11 +394,9 @@
                     });
                     $scope.state.moveFeedback = {
                         tone: "success",
-                        title: "Baseline saved",
-                        message: (data.snapshot && data.snapshot.name ? data.snapshot.name : "Snapshot") + " saved successfully.",
-                        issues: data.snapshot && data.snapshot.storage_label
-                            ? ["Storage: " + data.snapshot.storage_label]
-                            : []
+                        title: "Version saved",
+                        message: "Your organization and reporting changes have been saved.",
+                        issues: []
                     };
                     loadSnapshots(data.snapshot ? data.snapshot.path : null);
                 }, function(error) {
@@ -427,8 +430,8 @@
                     });
                     $scope.state.moveFeedback = {
                         tone: "success",
-                        title: "Baseline loaded",
-                        message: (data.snapshot && data.snapshot.name ? data.snapshot.name : "Snapshot") + " loaded successfully.",
+                        title: "Version loaded",
+                        message: "The organization now shows your selected saved version.",
                         issues: []
                     };
                     loadSnapshots($scope.state.selectedSnapshotPath);
@@ -499,11 +502,7 @@
         };
 
         $scope.fitToScreen = function() {
-            fitDiagramToViewport();
-        };
-
-        $scope.focusSelectedNode = function() {
-            focusNode($scope.state.selectedNode);
+            fitDiagramToViewport(true);
         };
 
         $scope.toggleSession = function() {
@@ -643,6 +642,10 @@
             windowElement.off("scroll", onWindowScroll);
             if (viewportElement) {
                 viewportElement.removeEventListener("wheel", onViewportWheel);
+                viewportElement.removeEventListener("touchstart", onViewportTouchStart);
+                viewportElement.removeEventListener("touchmove", onViewportTouchMove);
+                viewportElement.removeEventListener("touchend", stopCanvasPan);
+                viewportElement.removeEventListener("touchcancel", stopCanvasPan);
             }
         });
 
@@ -678,9 +681,12 @@
                 $scope.state.filters = angular.copy($scope.state.filters || defaultFilters());
             }
 
-            $scope.state.selectedNode = selectedEmployeeId
-                ? graph.nodesById[selectedEmployeeId] || graph.root
-                : graph.root;
+            $scope.state.selectedNode = selectedEmployeeId ? graph.nodesById[selectedEmployeeId] || null : null;
+            if (!selectedEmployeeId) { $scope.state.ui.detailsExpanded = false; }
+            if ($scope.state.ui.visibleLevels !== "custom") { setCollapsedLevels(); }
+            if (selectedEmployeeId && graph.nodesById[selectedEmployeeId]) {
+                revealReportingPath(graph.nodesById[selectedEmployeeId]);
+            }
 
             if (effectiveOptions.updateSavedBaseline !== false) {
                 setSavedBaseline(payload, effectiveOptions.snapshotInfo || null);
@@ -761,11 +767,10 @@
 
             if (!$scope.state.diagram.nodes.length) {
                 $scope.state.selectedNode = null;
-            } else if ($scope.state.diagram.visibleLookup && selectedNode && !$scope.state.diagram.visibleLookup[selectedNode.employee_id]) {
-                $scope.state.selectedNode = $scope.state.diagram.firstVisibleNode || $scope.state.treeRoot || null;
-            } else if (!$scope.state.selectedNode) {
-                $scope.state.selectedNode = $scope.state.diagram.firstVisibleNode || null;
+            } else if (selectedNode && !$scope.state.diagram.visibleLookup[selectedNode.employee_id]) {
+                $scope.state.selectedNode = null;
             }
+            if (!$scope.state.selectedNode) { $scope.state.ui.detailsExpanded = false; }
 
             if ($scope.state.drag.employeeId && !$scope.state.nodeMap[$scope.state.drag.employeeId]) {
                 clearDragState();
@@ -781,6 +786,30 @@
             });
         }
 
+        function setCollapsedLevels() {
+            var limit = $scope.state.ui.visibleLevels === "all" ? Infinity : Number($scope.state.ui.visibleLevels);
+            $scope.state.ui.collapsedNodes = {};
+            function visit(node, depth) {
+                if (!node) { return; }
+                if (node.children.length && depth >= limit - 1) {
+                    $scope.state.ui.collapsedNodes[node.employee_id] = true;
+                }
+                node.children.forEach(function(child) { visit(child, depth + 1); });
+            }
+            visit($scope.state.treeRoot, 0);
+        }
+
+        function revealReportingPath(node) {
+            var parent = node.parent;
+            while (parent) {
+                if ($scope.state.ui.collapsedNodes[parent.employee_id]) {
+                    delete $scope.state.ui.collapsedNodes[parent.employee_id];
+                    $scope.state.ui.visibleLevels = "custom";
+                }
+                parent = parent.parent;
+            }
+        }
+
         function collectFilteredNodes() {
             var filters = $scope.state.filters;
             var nodes = $scope.state.allNodes;
@@ -790,9 +819,14 @@
             var matchedIds = [];
 
             if (!hasFilters) {
-                nodes.forEach(function(node) {
+                function visitVisible(node) {
+                    if (!node) { return; }
                     visibleLookup[node.employee_id] = true;
-                });
+                    if (!$scope.state.ui.collapsedNodes[node.employee_id]) {
+                        node.children.forEach(visitVisible);
+                    }
+                }
+                visitVisible($scope.state.treeRoot);
 
                 return {
                     hasFilters: false,
@@ -934,7 +968,6 @@
                     centerX: centerX,
                     centerY: topY + (NODE_HEIGHT / 2),
                     data: node,
-                    accentColor: getDepartmentAccent(node.department),
                     match: !!filterResult.matchLookup[node.employee_id]
                 };
 
@@ -1094,6 +1127,10 @@
 
             if (viewportElement) {
                 viewportElement.removeEventListener("wheel", onViewportWheel);
+                viewportElement.removeEventListener("touchstart", onViewportTouchStart);
+                viewportElement.removeEventListener("touchmove", onViewportTouchMove);
+                viewportElement.removeEventListener("touchend", stopCanvasPan);
+                viewportElement.removeEventListener("touchcancel", stopCanvasPan);
             }
 
             viewportElement = nextViewport;
@@ -1103,7 +1140,29 @@
             }
 
             viewportElement.addEventListener("wheel", onViewportWheel, { passive: false });
+            viewportElement.addEventListener("touchstart", onViewportTouchStart, { passive: true });
+            viewportElement.addEventListener("touchmove", onViewportTouchMove, { passive: false });
+            viewportElement.addEventListener("touchend", stopCanvasPan);
+            viewportElement.addEventListener("touchcancel", stopCanvasPan);
             syncViewportSize();
+        }
+
+        function onViewportTouchStart(event) {
+            if (event.touches.length !== 1 || isInteractiveTarget(event.target)) { return; }
+            var touch = event.touches[0];
+            var canvas = $scope.state.canvas;
+            canvas.dragging = true;
+            canvas.dragStartX = touch.clientX;
+            canvas.dragStartY = touch.clientY;
+            canvas.originX = canvas.x;
+            canvas.originY = canvas.y;
+            canvas.hasInteracted = true;
+        }
+
+        function onViewportTouchMove(event) {
+            if (event.touches.length !== 1 || !$scope.state.canvas.dragging) { return; }
+            event.preventDefault();
+            onDocumentMouseMove(event.touches[0]);
         }
 
         function onViewportWheel(event) {
@@ -1150,11 +1209,17 @@
         function onDocumentKeydown(event) {
             var isEscape = event.key === "Escape" || event.key === "Esc" || event.keyCode === 27;
 
-            if (!isEscape || (!$scope.state.ui.filtersExpanded && !$scope.state.ui.sessionExpanded)) {
-                return;
+            if (!isEscape) { return; }
+            if ($scope.state.ui.filtersExpanded || $scope.state.ui.sessionExpanded) {
+                var selector = $scope.state.ui.filtersExpanded ? ".workspace__filters .menu-toggle" : ".workspace__session .menu-toggle";
+                $scope.$applyAsync(function() {
+                    closeWorkspaceDropdowns();
+                    var toggle = $window.document.querySelector(selector);
+                    if (toggle) { toggle.focus(); }
+                });
+            } else if ($scope.state.ui.detailsExpanded) {
+                $scope.$applyAsync($scope.closeDetails);
             }
-
-            $scope.$applyAsync(closeWorkspaceDropdowns);
         }
 
         function onWindowScroll() {
@@ -1198,10 +1263,10 @@
             }
 
             if ($scope.state.ui.filtersExpanded) {
-                $scope.state.ui.filtersMenuStyle = buildDropdownStyle(".workspace__filters .menu-toggle", 560, 520);
+                $scope.state.ui.filtersMenuStyle = buildDropdownStyle(".workspace__filters .menu-toggle", 340, 550);
             }
             if ($scope.state.ui.sessionExpanded) {
-                $scope.state.ui.sessionMenuStyle = buildDropdownStyle(".workspace__session .menu-toggle", 620, 620);
+                $scope.state.ui.sessionMenuStyle = buildDropdownStyle(".workspace__session .menu-toggle", 390, 680);
             }
         }
 
@@ -1274,7 +1339,7 @@
             canvas.hasInteracted = true;
         }
 
-        function fitDiagramToViewport() {
+        function fitDiagramToViewport(allowSmallCards) {
             if (!$scope.state.diagram.nodes.length) {
                 return;
             }
@@ -1292,7 +1357,14 @@
             canvas.scale = scale;
             canvas.x = (viewportWidth - ($scope.state.diagram.width * scale)) / 2;
             canvas.y = (viewportHeight - ($scope.state.diagram.height * scale)) / 2;
-            canvas.hasInteracted = false;
+            if (viewportWidth < 600 && scale < 0.85 && !allowSmallCards) {
+                var anchor = $scope.state.diagram.nodes.filter(function(node) { return node.match; })[0]
+                    || $scope.state.diagram.byId[$scope.state.treeRoot.employee_id];
+                canvas.scale = 0.85;
+                canvas.x = viewportWidth / 2 - anchor.centerX * canvas.scale;
+                canvas.y = anchor.match ? viewportHeight / 2 - anchor.centerY * canvas.scale : 32 - anchor.y * canvas.scale;
+            }
+            canvas.hasInteracted = !!allowSmallCards;
         }
 
         function focusNode(node) {
@@ -1310,24 +1382,6 @@
             canvas.x = (canvas.viewportWidth / 2) - (renderNode.centerX * targetScale);
             canvas.y = (canvas.viewportHeight / 2) - (renderNode.centerY * targetScale);
             canvas.hasInteracted = true;
-        }
-
-        function getDepartmentAccent(department) {
-            var normalized = (department || "").toLowerCase();
-
-            if (normalized === "executive") {
-                return "#f2665f";
-            }
-            if (normalized === "engineering" || normalized === "data") {
-                return "#654ea3";
-            }
-            if (normalized === "sales") {
-                return "#fdb515";
-            }
-            if (normalized === "people") {
-                return "#516dc4";
-            }
-            return "#3d3a56";
         }
 
         function isInteractiveTarget(target) {
