@@ -1,5 +1,3 @@
-*.zip
-
 state.json
 *.pyc
 .idea/
