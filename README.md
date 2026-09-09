@@ -25,9 +25,15 @@ The chart starts with three reporting levels. Expand a manager’s direct report
 
 ## Inputs
 
+Select the workforce dataset you already created in your Dataiku project. The plugin has no direct DWH/Snowflake connection or SQL dependency. The Snowflake starter below is an optional, separate preparation aid.
+
 - Required employee dataset
 - Optional manager-constraints dataset
 - Optional snapshot folder for DSS persistence
+
+Since version 2.2.0, only `employee_id` and `manager_id` columns are required to display a valid hierarchy (manager ID is blank only for the root). Missing names use `Employee <ID>`; other incomplete details show placeholders and review notices. Column casing and surrounding whitespace are accepted. Missing information required to approve a move still blocks that move. See the input specification for status, eligibility and rule behavior.
+
+To update an installed copy, upload the 2.2.0 plugin ZIP using the same plugin ID, restart the webapp backend, keep your prepared dataset selected as **Input workforce dataset**, and refresh from source. Local source changes do not update the installed DSS copy automatically.
 
 Reference material:
 

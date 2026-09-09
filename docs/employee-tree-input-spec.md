@@ -9,18 +9,22 @@ Use:
 - One required employee dataset
 - One optional manager-constraints dataset
 
-## Required Employee Columns
+## Employee Columns
+
+Select the prepared dataset in your Dataiku project. The plugin reads it through the DSS dataset API; no warehouse connection, SQL configuration or warehouse table names are needed. Column names are matched without case sensitivity and with surrounding whitespace removed. Ambiguous duplicates such as both `employee_id` and `EMPLOYEE_ID` are rejected.
 
 | Column | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `employee_id` | string | yes | Unique stable identifier for the employee |
-| `manager_id` | string | no | Empty or null means the employee is the root |
-| `full_name` | string | yes | Primary display label on the node |
-| `job_title` | string | yes | Secondary display label on the node |
-| `department` | string | yes | Used for display and optional constraint checks |
-| `location` | string | yes | Used for display and optional constraint checks |
-| `level` | string | yes | Grade, level, or band shown on the node |
-| `employment_status` | string | yes | Example: `active`, `leave`, `contractor`, `inactive` |
+| `manager_id` | string | column required | Empty or null value only for the root; other values reference employee IDs |
+| `full_name` | string | no | Missing name displays as `Employee <employee_id>` with a review notice |
+| `job_title` | string | no | Missing title displays as `Role not provided` |
+| `department` | string | no | Needed when an applicable department rule must be checked |
+| `location` | string | no | Needed when an applicable location rule must be checked |
+| `level` | string | no | Needed when an applicable level-range rule must be checked |
+| `employment_status` | string | no for viewing | Must explicitly be `active` to receive new direct reports |
+
+Missing details remain null in the underlying data and generate a concise review notice for the employee. The source dataset and its blank values are preserved in hierarchy exports; display placeholders are not written back. Only the employee-ID value and the two hierarchy columns are mandatory for viewing a structurally valid tree. Keep both ID columns as strings in the Dataiku dataset schema to preserve leading zeros.
 
 ## Recommended Optional Employee Columns
 
@@ -31,7 +35,7 @@ Use:
 | `photo_url` | string | no | For avatar rendering |
 | `start_date` | date | no | For tenure display |
 | `max_direct_reports` | integer | no | Per-manager override |
-| `can_be_manager` | boolean | no | If false, drag/drop should reject new reports |
+| `can_be_manager` | boolean | no | Omitted column defaults to true for compatibility. An explicit blank is unknown and blocks new reports; false blocks management |
 | `sort_order` | integer | no | Stable sibling ordering |
 
 ## Required Data Rules
@@ -41,7 +45,8 @@ Use:
 - Exactly one employee should have an empty/null `manager_id` in v1.
 - No employee may manage themselves.
 - The hierarchy must be acyclic.
-- If `employment_status` is not `active`, the plugin should warn or block moves based on product policy.
+- Missing status/explicitly blank eligibility allows viewing existing relationships with review notices but blocks assigning new reports to that person. A known inactive or ineligible manager with existing reports remains a validation error.
+- Missing department/location/level required by an existing rule produces a review notice; a proposed move requiring that missing value is blocked. Known rule and capacity violations remain errors.
 
 ## Optional Manager Constraints Dataset
 
@@ -107,4 +112,3 @@ The backend should return a normalized document similar to:
 
 - `demo/employees-demo.csv`
 - `demo/manager-constraints-demo.csv`
-

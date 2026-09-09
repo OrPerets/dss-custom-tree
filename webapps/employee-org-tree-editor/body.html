@@ -428,7 +428,7 @@
                                             class="org-node__surface"
                                             ng-focus="ensureNodeVisible(renderNode)"
                                             ng-click="selectNode(renderNode.data, $event)"
-                                            ng-attr-aria-label="{{renderNode.data.full_name}}, {{renderNode.data.job_title}}. View employee details"
+                                            ng-attr-aria-label="{{renderNode.data.full_name}}, {{renderNode.data.job_title || 'Role not provided'}}. View employee details"
                                             ng-attr-aria-pressed="{{state.selectedNode.employee_id === renderNode.employee_id}}"
                                         >
                                             <span class="org-node__identity">
@@ -440,12 +440,12 @@
                                                         {{renderNode.data.full_name}}
                                                     </span>
                                                     <span class="org-node__title" title="{{renderNode.data.job_title}}">
-                                                        {{renderNode.data.job_title}}
+                                                        {{renderNode.data.job_title || 'Role not provided'}}
                                                     </span>
                                                 </span>
                                             </span>
                                             <span class="org-node__department">
-                                                {{renderNode.data.department}}
+                                                {{renderNode.data.department || 'Department not provided'}}
                                                 <span
                                                     class="node-warning"
                                                     ng-if="renderNode.data.warnings.length"
@@ -553,9 +553,9 @@
                                     {{getAvatarLabel(state.selectedNode)}}
                                 </span>
                                 <h2>{{state.selectedNode.full_name}}</h2>
-                                <p>{{state.selectedNode.job_title}}</p>
+                                <p>{{state.selectedNode.job_title || 'Role not provided'}}</p>
                                 <span class="status-pill" ng-class="getStatusTone(state.selectedNode)">
-                                    {{state.selectedNode.employment_status}}
+                                    {{state.selectedNode.employment_status || 'Status not provided'}}
                                 </span>
                             </div>
                             <dl class="details-grid">
@@ -565,11 +565,11 @@
                                 </div>
                                 <div>
                                     <dt>Department</dt>
-                                    <dd>{{state.selectedNode.department}}</dd>
+                                    <dd>{{state.selectedNode.department || 'Not provided'}}</dd>
                                 </div>
                                 <div>
                                     <dt>Location</dt>
-                                    <dd>{{state.selectedNode.location}}</dd>
+                                    <dd>{{state.selectedNode.location || 'Not provided'}}</dd>
                                 </div>
                                 <div>
                                     <dt>Direct reports</dt>
@@ -598,7 +598,7 @@
                                     </div>
                                     <div>
                                         <dt>Level</dt>
-                                        <dd>{{state.selectedNode.level}}</dd>
+                                        <dd>{{state.selectedNode.level || 'Not provided'}}</dd>
                                     </div>
                                     <div ng-if="state.selectedNode.team_name">
                                         <dt>Team</dt>
@@ -635,7 +635,7 @@
                                     <span class="field__label">New manager</span>
                                     <select
                                         ng-model="state.ui.newManagerId"
-                                        ng-options="person.employee_id as (person.full_name + ' · ' + person.job_title) for person in state.allNodes | filter:{can_be_manager:true}"
+                                        ng-options="person.employee_id as (person.full_name + ' · ' + (person.job_title || 'Role not provided')) for person in state.allNodes | filter:{can_be_manager:true}"
                                         ng-disabled="state.moveSubmitting"
                                     >
                                         <option value="">Select a manager</option>

@@ -20,6 +20,7 @@
       "name": "default_employee_dataset",
       "type": "DATASET",
       "label": "Input workforce dataset",
+      "description": "Select the prepared dataset in this Dataiku project. Requires employee_id and manager_id columns; incomplete employee details appear as review notices.",
       "mandatory": true
     },
     {

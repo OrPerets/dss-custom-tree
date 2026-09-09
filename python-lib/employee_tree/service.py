@@ -3,7 +3,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 from employee_tree.exceptions import EmployeeTreeValidationError
-from employee_tree.parser import parse_constraint_rows, parse_employee_rows
+from employee_tree.parser import normalize_column_names, parse_constraint_rows, parse_employee_rows
 
 
 def validate_org_tree_rows(employee_rows, constraint_rows=None):
@@ -44,6 +44,11 @@ def build_org_tree_payload(employee_rows, constraint_rows=None, change_log=None)
         manager_constraint = constraint_by_manager.get(employee.employee_id)
         max_direct_reports = _resolve_max_direct_reports(employee, constraint_by_manager)
         warnings = _build_node_warnings(employee, len(child_ids), max_direct_reports)
+        reporting_rule = constraint_by_manager.get(employee.manager_id)
+        if reporting_rule:
+            for issue in _validate_child_against_constraint(employee, reporting_rule):
+                if issue["code"] == "missing_rule_field":
+                    warnings.append(dict(issue, severity="warning"))
 
         nodes.append({
             "employee_id": employee.employee_id,
@@ -276,7 +281,7 @@ def _collect_issues(employees, constraints):
                 ),
             })
 
-        if not manager.can_be_manager and children:
+        if manager.can_be_manager is False and children:
             issues.append({
                 "code": "manager_not_allowed",
                 "severity": "error",
@@ -284,7 +289,7 @@ def _collect_issues(employees, constraints):
                 "message": "Manager '{0}' is marked as unable to manage direct reports.".format(manager_id),
             })
 
-        if manager.employment_status.lower() != "active" and children:
+        if manager.employment_status and manager.employment_status.lower() != "active" and children:
             issues.append({
                 "code": "inactive_manager",
                 "severity": "error",
@@ -306,7 +311,8 @@ def _collect_issues(employees, constraints):
             continue
 
         for child in children_by_manager.get(manager_id, []):
-            issues.extend(_validate_child_against_constraint(child, constraint))
+            issues.extend(issue for issue in _validate_child_against_constraint(child, constraint)
+                          if issue["code"] != "missing_rule_field")
 
     root_id = root_ids[0] if len(root_ids) == 1 else None
     return issues, employee_by_id, _sort_children(children_by_manager), constraint_by_manager, root_id
@@ -314,8 +320,20 @@ def _collect_issues(employees, constraints):
 
 def _validate_child_against_constraint(child, constraint):
     issues = []
+    for field, is_required in (
+        ("department", bool(constraint.allowed_departments)),
+        ("location", bool(constraint.allowed_locations)),
+        ("level", bool(constraint.min_child_level or constraint.max_child_level)),
+    ):
+        if is_required and getattr(child, field) is None:
+            issues.append({
+                "code": "missing_rule_field", "severity": "error", "field": field,
+                "employee_id": child.employee_id, "manager_id": constraint.manager_id,
+                "message": "Employee '{0}' needs a {1} value to check manager '{2}' reporting rules.".format(
+                    child.employee_id, field, constraint.manager_id),
+            })
 
-    if constraint.allowed_departments and child.department not in constraint.allowed_departments:
+    if constraint.allowed_departments and child.department is not None and child.department not in constraint.allowed_departments:
         issues.append({
             "code": "department_not_allowed",
             "severity": "error",
@@ -326,7 +344,7 @@ def _validate_child_against_constraint(child, constraint):
             ),
         })
 
-    if constraint.allowed_locations and child.location not in constraint.allowed_locations:
+    if constraint.allowed_locations and child.location is not None and child.location not in constraint.allowed_locations:
         issues.append({
             "code": "location_not_allowed",
             "severity": "error",
@@ -337,7 +355,7 @@ def _validate_child_against_constraint(child, constraint):
             ),
         })
 
-    if constraint.min_child_level and _compare_levels(child.level, constraint.min_child_level) < 0:
+    if constraint.min_child_level and child.level is not None and _compare_levels(child.level, constraint.min_child_level) < 0:
         issues.append({
             "code": "child_level_below_minimum",
             "severity": "error",
@@ -348,7 +366,7 @@ def _validate_child_against_constraint(child, constraint):
             ),
         })
 
-    if constraint.max_child_level and _compare_levels(child.level, constraint.max_child_level) > 0:
+    if constraint.max_child_level and child.level is not None and _compare_levels(child.level, constraint.max_child_level) > 0:
         issues.append({
             "code": "child_level_above_maximum",
             "severity": "error",
@@ -414,7 +432,7 @@ def _resolve_max_direct_reports(employee, constraint_by_manager):
 
 
 def _apply_change_log(employee_rows, change_log):
-    updated_rows = [dict(row) for row in employee_rows]
+    updated_rows = [normalize_column_names(row) for row in employee_rows]
     rows_by_id = {}
 
     for row in updated_rows:
@@ -437,7 +455,7 @@ def _apply_change_log(employee_rows, change_log):
 
 
 def _apply_manager_change(employee_rows, employee_id, new_manager_id):
-    updated_rows = [dict(row) for row in employee_rows]
+    updated_rows = [normalize_column_names(row) for row in employee_rows]
 
     for row in updated_rows:
         if str(row.get("employee_id")).strip() == employee_id:
@@ -500,12 +518,26 @@ def _validate_proposed_move(employee_id, new_manager_id, employee_by_id, childre
             manager_id=new_manager.employee_id,
         )]
 
+    if new_manager.can_be_manager is None:
+        return [_build_move_issue(
+            "unknown_manager_eligibility",
+            "Fill can_be_manager for employee '{0}' before assigning new reports.".format(new_manager.employee_id),
+            employee_id=employee.employee_id, manager_id=new_manager.employee_id,
+        )]
+
     if not new_manager.can_be_manager:
         return [_build_move_issue(
             "manager_not_allowed",
             "Manager '{0}' is marked as unable to manage direct reports.".format(new_manager.employee_id),
             employee_id=employee.employee_id,
             manager_id=new_manager.employee_id,
+        )]
+
+    if not new_manager.employment_status:
+        return [_build_move_issue(
+            "unknown_manager_status",
+            "Fill employment_status for employee '{0}' before assigning new reports.".format(new_manager.employee_id),
+            employee_id=employee.employee_id, manager_id=new_manager.employee_id,
         )]
 
     if new_manager.employment_status.lower() != "active":
@@ -583,6 +615,16 @@ def _build_change_log_entry(employee_id, new_manager_id, employee_by_id):
 
 def _build_node_warnings(employee, direct_reports_count, max_direct_reports):
     warnings = []
+    if employee.missing_fields:
+        labels = {"full_name": "name", "job_title": "job title", "department": "department",
+                  "location": "location", "level": "level", "employment_status": "employment status",
+                  "can_be_manager": "manager eligibility"}
+        warnings.append({
+            "code": "incomplete_employee_details", "severity": "warning",
+            "fields": list(employee.missing_fields),
+            "message": "Missing {0}. Update this employee in the source dataset and refresh.".format(
+                ", ".join(labels[field] for field in employee.missing_fields)),
+        })
 
     if max_direct_reports is not None and max_direct_reports > 0 and direct_reports_count >= max_direct_reports:
         warnings.append({
@@ -593,7 +635,7 @@ def _build_node_warnings(employee, direct_reports_count, max_direct_reports):
             ),
         })
 
-    if employee.employment_status.lower() != "active":
+    if employee.employment_status and employee.employment_status.lower() != "active":
         warnings.append({
             "code": "employment_status_attention",
             "severity": "warning",

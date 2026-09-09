@@ -172,7 +172,7 @@
             if (status === "active") {
                 return "status-active";
             }
-            if (status === "leave" || status === "contractor") {
+            if (!status || status === "leave" || status === "contractor") {
                 return "status-attention";
             }
             return "status-inactive";
@@ -1026,8 +1026,16 @@
                 return previewResult(false, "Move blocked", "This move would create a reporting cycle because the target manager is inside the employee's subtree.");
             }
 
+            if (targetManager.can_be_manager == null) {
+                return previewResult(false, "Move blocked", "Fill manager eligibility for " + targetManager.full_name + " in the source dataset first.");
+            }
+
             if (!targetManager.can_be_manager) {
                 return previewResult(false, "Move blocked", targetManager.full_name + " cannot receive direct reports.");
+            }
+
+            if (!targetManager.employment_status) {
+                return previewResult(false, "Move blocked", "Fill employment status for " + targetManager.full_name + " in the source dataset first.");
             }
 
             if ((targetManager.employment_status || "").toLowerCase() !== "active") {
@@ -1036,6 +1044,12 @@
 
             if (targetManager.max_direct_reports != null && targetManager.capacity_remaining <= 0) {
                 return previewResult(false, "Move blocked", targetManager.full_name + " is already at direct-report capacity.");
+            }
+
+            if (rule && ((rule.allowed_departments.length && !employee.department) ||
+                    (rule.allowed_locations.length && !employee.location) ||
+                    ((rule.min_child_level || rule.max_child_level) && !employee.level))) {
+                return previewResult(false, "Move blocked", "Complete this employee's department, location or level required by the target manager's rules in the source dataset first.");
             }
 
             if (rule && rule.allowed_departments.length && rule.allowed_departments.indexOf(employee.department) === -1) {

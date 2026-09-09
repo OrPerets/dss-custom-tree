@@ -4,8 +4,8 @@ from employee_tree.exceptions import EmployeeTreeValidationError
 from employee_tree.models import EmployeeRecord, ManagerConstraint
 
 
-REQUIRED_EMPLOYEE_FIELDS = (
-    "employee_id",
+REQUIRED_EMPLOYEE_FIELDS = ("employee_id",)
+EMPLOYEE_DETAIL_FIELDS = (
     "full_name",
     "job_title",
     "department",
@@ -13,6 +13,20 @@ REQUIRED_EMPLOYEE_FIELDS = (
     "level",
     "employment_status",
 )
+
+
+def normalize_column_names(row):
+    """Accept DSS column casing/outer whitespace without guessing source mappings."""
+    normalized = {}
+    for key, value in row.items():
+        name = str(key).strip().lstrip("\ufeff").lower()
+        if name in normalized:
+            raise EmployeeTreeValidationError([{
+                "code": "ambiguous_column_name", "severity": "error",
+                "message": "More than one input column matches '{0}'. Rename the duplicate column.".format(name),
+            }])
+        normalized[name] = value
+    return normalized
 
 
 def _is_blank(value):
@@ -95,6 +109,14 @@ def parse_employee_rows(rows):
     employees = []
 
     for row_number, row in enumerate(rows, start=2):
+        row = normalize_column_names(row)
+        if "manager_id" not in row:
+            issues.append({
+                "code": "missing_manager_column", "severity": "error",
+                "row_number": row_number,
+                "message": "The employee dataset needs a 'manager_id' column. Leave its value blank only for the head of the organization.",
+            })
+            continue
         missing_fields = [
             field_name for field_name in REQUIRED_EMPLOYEE_FIELDS
             if _normalize_text(row.get(field_name)) is None
@@ -111,10 +133,17 @@ def parse_employee_rows(rows):
             })
             continue
 
+        employee_id = _normalize_text(row.get("employee_id"))
+        missing_details = [field for field in EMPLOYEE_DETAIL_FIELDS if _is_blank(row.get(field))]
+        # Omitting this optional column preserves the established unrestricted default.
+        # A present but empty value is unknown, and cannot authorize a new report.
+        manager_default = None if "can_be_manager" in row else True
+        if "can_be_manager" in row and _is_blank(row["can_be_manager"]):
+            missing_details.append("can_be_manager")
         employees.append(EmployeeRecord(
-            employee_id=_normalize_text(row.get("employee_id")),
+            employee_id=employee_id,
             manager_id=_normalize_text(row.get("manager_id")),
-            full_name=_normalize_text(row.get("full_name")),
+            full_name=_normalize_text(row.get("full_name")) or "Employee {0}".format(employee_id),
             job_title=_normalize_text(row.get("job_title")),
             department=_normalize_text(row.get("department")),
             location=_normalize_text(row.get("location")),
@@ -125,9 +154,10 @@ def parse_employee_rows(rows):
             photo_url=_normalize_text(row.get("photo_url")),
             start_date=_parse_date_like(row.get("start_date")),
             max_direct_reports=_parse_int(row.get("max_direct_reports"), "max_direct_reports", row_number),
-            can_be_manager=_parse_bool(row.get("can_be_manager"), "can_be_manager", row_number, default=True),
+            can_be_manager=_parse_bool(row.get("can_be_manager"), "can_be_manager", row_number, default=manager_default),
             sort_order=_parse_int(row.get("sort_order"), "sort_order", row_number),
             row_number=row_number,
+            missing_fields=tuple(missing_details),
         ))
 
     if issues:
@@ -140,6 +170,7 @@ def parse_constraint_rows(rows):
     issues = []
 
     for row_number, row in enumerate(rows, start=2):
+        row = normalize_column_names(row)
         manager_id = _normalize_text(row.get("manager_id"))
         if manager_id is None:
             issues.append({

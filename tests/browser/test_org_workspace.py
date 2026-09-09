@@ -17,6 +17,7 @@ import pytest
 from playwright.sync_api import expect, sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "python-lib"))
 
 
 @pytest.fixture(scope="module")
@@ -255,3 +256,61 @@ def test_no_storage_and_loading_error(browser, preview_url):
     page.get_by_role("button", name="Try again").click()
     expect(page.locator(".org-node")).to_have_count(8)
     page.close()
+
+
+def load_partial_workforce(page, changes, rules=None):
+    from employee_tree import build_org_tree_payload
+    with (ROOT / "demo/employees-demo.csv").open() as stream:
+        rows = list(csv.DictReader(stream))
+    for row in rows:
+        row.update(changes.get(row["employee_id"], {}))
+    payload = build_org_tree_payload(rows, rules or [])
+    page.route("**/load-org-tree", lambda route: route.fulfill(json=payload))
+    page.reload()
+    expect(page.locator(".org-node")).to_have_count(8)
+
+
+def test_incomplete_details_render_and_explain_missing_fields(page):
+    fields = ["full_name", "job_title", "department", "location", "level",
+              "employment_status", "can_be_manager"]
+    load_partial_workforce(page, {"E005": dict.fromkeys(fields)})
+    card = page.get_by_role("button", name="Employee E005, Role not provided. View employee details")
+    expect(card).to_be_visible()
+    card.click()
+    details = page.get_by_role("complementary", name="Employee details")
+    expect(details.get_by_text("Status not provided", exact=True)).to_be_visible()
+    expect(details.locator(".review-note")).to_contain_text("Missing name, job title")
+    expect(details.locator(".review-note")).to_contain_text("source dataset and refresh")
+    details.locator("summary", has_text="Employee information").click()
+    expect(details.get_by_text("Not provided", exact=True)).to_have_count(3)
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    page.screenshot(path="/tmp/org-tree-incomplete-details.png", full_page=True)
+
+
+@pytest.mark.parametrize("field,expected", [("employment_status", "Fill employment status"),
+                                            ("can_be_manager", "Fill manager eligibility")])
+def test_drag_preview_blocks_unknown_manager_policy(page, field, expected):
+    load_partial_workforce(page, {"E005": {field: None}})
+    page.get_by_role("combobox", name="Visible organization levels").select_option("all")
+    source = page.locator(".org-node").filter(has=page.get_by_role("button", name="Tomer Niv, Data Engineer. View employee details"))
+    target = page.locator(".org-node").filter(has=page.get_by_role("button", name="Daniel Katz, Engineering Manager. View employee details"))
+    transfer = page.evaluate_handle("new DataTransfer()")
+    source.locator(".org-node__drag-handle").dispatch_event("dragstart", {"dataTransfer": transfer})
+    target.dispatch_event("dragover", {"dataTransfer": transfer})
+    expect(target).to_have_class(re.compile("org-node--drop-invalid"))
+    assert expected in state(page, "s.state.drag.preview.message")
+    target.dispatch_event("drop", {"dataTransfer": transfer})
+    assert state(page, "s.state.nodeMap.E009.manager_id") == "E006"
+
+
+def test_drag_preview_blocks_missing_level_required_by_target_rule(page):
+    load_partial_workforce(page, {"E009": {"level": None}},
+                           [{"manager_id": "E005", "max_child_level": "L9"}])
+    page.get_by_role("combobox", name="Visible organization levels").select_option("all")
+    source = page.locator(".org-node").filter(has=page.get_by_role("button", name="Tomer Niv, Data Engineer. View employee details"))
+    target = page.locator(".org-node").filter(has=page.get_by_role("button", name="Daniel Katz, Engineering Manager. View employee details"))
+    transfer = page.evaluate_handle("new DataTransfer()")
+    source.locator(".org-node__drag-handle").dispatch_event("dragstart", {"dataTransfer": transfer})
+    target.dispatch_event("dragover", {"dataTransfer": transfer})
+    expect(target).to_have_class(re.compile("org-node--drop-invalid"))
+    assert "required by the target manager's rules" in state(page, "s.state.drag.preview.message")

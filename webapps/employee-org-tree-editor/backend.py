@@ -61,7 +61,9 @@ def _get_value(payload, snake_case_key, camel_case_key=None):
 def _load_dataset_records(dataset_name):
     if dataiku is None:
         raise RuntimeError("Dataiku runtime is not available. Use demo mode outside DSS.")
-    return dataiku.Dataset(dataset_name).get_dataframe().to_dict("records")
+    # Read the configured project dataset through DSS. Row iteration avoids pandas
+    # inferring numeric types for text employee/manager IDs (and losing leading zeros).
+    return [dict(row) for row in dataiku.Dataset(dataset_name).iter_rows()]
 
 
 def _resolve_input_rows(payload):
@@ -412,6 +414,8 @@ def export_flat_table():
             content=_csv_payload(rows),
             row_count=len(rows),
         )
+    except EmployeeTreeValidationError as error:
+        return _validation_error_response(error)
     except ValueError as error:
         return _bad_request_response(str(error))
     except Exception as error:

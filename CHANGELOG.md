@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 2.2.0 (2026-09-09)
+* Load prepared Dataiku datasets with missing employee names, titles, departments, locations, levels or statuses. Missing names display as Employee followed by the ID; other absent details show explicit placeholders and review notices.
+* Accept column names regardless of casing and outer whitespace, including move replay and export. Keep employee IDs, reporting links, duplicate columns and cycles strict.
+* Preserve text IDs when reading project datasets through the DSS row API. No direct warehouse connection is required.
+* Keep unknown status, explicit blank manager eligibility and missing rule inputs from authorizing new reports. Existing relationships with incomplete policy inputs remain visible with review notices; known violations still fail validation.
+
 ## Version 2.1.1 (2026-09-07)
 * Reduced header, title and toolbar height to give the organization editor more space.
 * Combined the organization title and counts into one row and removed introductory text.

@@ -1,6 +1,6 @@
 {
   "id" : "employee-org-tree-visualizer",
-  "version" : "2.1.1",
+  "version" : "2.2.0",
   "meta" : {
     "label" : "Amdocs Workforce Org Designer",
     "description" : "Review and update workforce reporting hierarchies in Dataiku DSS",
