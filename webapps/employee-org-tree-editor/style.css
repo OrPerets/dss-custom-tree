@@ -901,6 +901,26 @@ input::placeholder {
 .feedback-toast--error {
     border-left-color: var(--am-danger);
 }
+.hierarchy-review-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border: 1px solid #ead8b7;
+    border-radius: 8px;
+    background: #fffbf2;
+    color: #76500d;
+    font-size: 12px;
+}
+
+.hierarchy-review-banner span { display: block; margin-top: 3px; }
+.review-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.org-node--reference { border-style: dashed; }
+.tree-link--group { stroke-dasharray: 6 5; }
+
 .error-banner {
     margin-bottom: 24px;
     padding: 18px 22px;

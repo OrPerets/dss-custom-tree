@@ -25,6 +25,7 @@
             snapshotLoading: false,
             hierarchyExporting: false,
             moveLogExporting: false,
+            missingManagersExporting: false,
             snapshotsLoading: false,
             backendError: null,
             moveFeedback: null,
@@ -156,7 +157,7 @@
         };
 
         $scope.moveSelectedEmployee = function() {
-            if (!$scope.state.selectedNode || !$scope.state.ui.newManagerId || $scope.state.moveSubmitting) { return; }
+            if ($scope.isReviewMode() || !$scope.state.selectedNode || !$scope.state.ui.newManagerId || $scope.state.moveSubmitting) { return; }
             var managerId = $scope.state.ui.newManagerId;
             $scope.startNodeDrag($scope.state.selectedNode.employee_id);
             $scope.completeDrop(managerId);
@@ -164,7 +165,14 @@
         };
 
         $scope.getManagerLabel = function(node) {
+            if (node.is_virtual_root) { return "Display group only"; }
+            if (node.is_missing_manager) { return "Unknown — manager row missing"; }
+            if ($scope.isReviewMode() && !node.manager_id) { return "No manager ID in source"; }
             return node.current_manager_name || node.manager_id || "Head of organization";
+        };
+
+        $scope.isReviewMode = function() {
+            return !!($scope.state.treePayload && $scope.state.treePayload.meta.review_only);
         };
 
         $scope.getStatusTone = function(node) {
@@ -263,6 +271,7 @@
                 "org-node--selected": $scope.state.selectedNode && $scope.state.selectedNode.employee_id === renderNode.employee_id,
                 "org-node--match": renderNode.match,
                 "org-node--warning": renderNode.data.warnings.length,
+                "org-node--reference": renderNode.data.display_only,
                 "org-node--drag-source": $scope.state.drag.employeeId === renderNode.employee_id,
                 "org-node--drop-valid": isHoverTarget && preview.valid,
                 "org-node--drop-invalid": isHoverTarget && !preview.valid
@@ -298,6 +307,37 @@
 
         $scope.applyFilters = function() {
             rebuildDiagram(true);
+        };
+
+        $scope.reviewOrgTree = function() {
+            if ($scope.state.treeLoading) { return; }
+            $scope.state.treeLoading = true;
+            $scope.dismissError();
+            $scope.dismissMoveFeedback();
+            clearDragState();
+            $http.post(getWebAppBackendUrl("review-org-tree"), buildRequestPayload())
+                .then(function(response) {
+                    $scope.state.treeLoading = false;
+                    initializeWorkspace(response.data, {
+                        fitToScreen: true, resetFilters: true, updateSavedBaseline: true, snapshotInfo: null
+                    });
+                }, function(error) {
+                    $scope.state.treeLoading = false;
+                    handleBackendError(error, "Unable to review this dataset.");
+                });
+        };
+
+        $scope.exportMissingManagers = function() {
+            if ($scope.state.missingManagersExporting) { return; }
+            $scope.state.missingManagersExporting = true;
+            $http.post(getWebAppBackendUrl("export-missing-managers"), buildRequestPayload())
+                .then(function(response) {
+                    $scope.state.missingManagersExporting = false;
+                    downloadFile(response.data);
+                }, function(error) {
+                    $scope.state.missingManagersExporting = false;
+                    handleBackendError(error, "Unable to export missing managers.");
+                });
         };
 
         $scope.resetFilters = function() {
@@ -370,7 +410,7 @@
         };
 
         $scope.saveSnapshot = function() {
-            if (!$scope.state.treePayload || $scope.state.snapshotSaving || !$scope.canUseSnapshotStorage()) {
+            if ($scope.isReviewMode() || !$scope.state.treePayload || $scope.state.snapshotSaving || !$scope.canUseSnapshotStorage()) {
                 return;
             }
 
@@ -534,7 +574,7 @@
         };
 
         $scope.startNodeDrag = function(employeeId) {
-            if ($scope.state.moveSubmitting || !employeeId || !$scope.state.nodeMap[employeeId]) {
+            if ($scope.isReviewMode() || $scope.state.moveSubmitting || !employeeId || !$scope.state.nodeMap[employeeId]) {
                 return;
             }
 
@@ -677,6 +717,8 @@
 
             if (effectiveOptions.resetFilters) {
                 $scope.state.filters = defaultFilters();
+                // Start a large forest with its groups collapsed; search still finds every employee.
+                if (payload.meta && payload.meta.review_only) { $scope.state.ui.visibleLevels = "2"; }
             } else if (!effectiveOptions.preserveFilters) {
                 $scope.state.filters = angular.copy($scope.state.filters || defaultFilters());
             }
@@ -886,6 +928,7 @@
             var search = (filters.search || "").trim().toLowerCase();
             var searchHit = !search || [
                 node.full_name,
+                node.manager_id,
                 node.employee_id,
                 node.job_title
             ].join(" ").toLowerCase().indexOf(search) !== -1;
@@ -930,7 +973,7 @@
                 height: Math.max(maxBottom + DIAGRAM_PADDING, NODE_HEIGHT + (DIAGRAM_PADDING * 2)),
                 nodes: nodes,
                 links: links,
-                visibleCount: nodes.length,
+                visibleCount: nodes.filter(function(node) { return !node.data.display_only; }).length,
                 totalCount: filterResult.totalCount,
                 matchedCount: filterResult.matchedIds.length,
                 emptyMessage: "",
@@ -979,6 +1022,7 @@
                 childLayouts.forEach(function(childLayout) {
                     links.push({
                         key: node.employee_id + "-" + childLayout.employee_id,
+                        displayOnly: !!node.is_virtual_root,
                         path: buildLinkPath(centerX, topY + NODE_HEIGHT, childLayout.centerX, childLayout.y)
                     });
                 });
@@ -1002,6 +1046,9 @@
         }
 
         function buildMovePreview(employeeId, targetEmployeeId) {
+            if ($scope.isReviewMode()) {
+                return previewResult(false, "Read-only review", "Resolve missing manager records and refresh before editing reporting lines.");
+            }
             var employee = $scope.state.nodeMap[employeeId];
             var targetManager = $scope.state.nodeMap[targetEmployeeId];
             var rule = targetManager && targetManager.manager_rule;
@@ -1509,7 +1556,9 @@
             $scope.state.backendError = {
                 title: fallbackMessage,
                 message: payload.message || payload.error || fallbackMessage,
-                issues: payload.issues || []
+                issues: (payload.issues || []).slice(0, 10),
+                issueCount: (payload.issues || []).length,
+                reviewAvailable: !!payload.review_available
             };
         }
 

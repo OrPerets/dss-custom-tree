@@ -20,6 +20,7 @@ from employee_tree import (
     simulate_org_tree_move,
     validate_org_tree_rows,
 )
+from employee_tree.review import REVIEWABLE_ISSUES, build_org_tree_review_payload, missing_manager_report
 
 try:
     import dataiku
@@ -105,7 +106,20 @@ def _schema_from_records(records):
 
 
 def _validation_error_response(error):
-    return jsonify(error.to_dict()), 400
+    payload = error.to_dict()
+    payload["review_available"] = bool(error.issues) and all(
+        issue["code"] in REVIEWABLE_ISSUES for issue in error.issues)
+    payload["review_available"] = payload["review_available"] and any(
+        issue["code"] == "missing_manager" or len(issue.get("root_employee_ids", [])) > 1
+        for issue in error.issues)
+    if payload["review_available"]:
+        missing = [issue for issue in error.issues if issue["code"] == "missing_manager"]
+        if missing:
+            payload["message"] = "{0} employees reference {1} managers who have no row in the selected dataset. Review the available employees or add the missing manager records to the source dataset.".format(
+                len(missing), len({issue["manager_id"] for issue in missing}))
+        else:
+            payload["message"] = "The dataset contains separate reporting roots. You can inspect them together in a read-only review."
+    return jsonify(payload), 400
 
 
 def _bad_request_response(message, error_code="bad_request"):
@@ -319,6 +333,33 @@ def move_employee():
         return _validation_error_response(error)
     except ValueError as error:
         return _bad_request_response(str(error))
+    except Exception as error:
+        return _unexpected_error_response(error)
+
+
+@app.route("/review-org-tree", methods=["POST"])
+def review_org_tree():
+    try:
+        source = _resolve_input_rows(_get_payload())
+        payload = build_org_tree_review_payload(source["employee_rows"], source["constraint_rows"])
+        payload["meta"]["source"] = source["source"]
+        return jsonify(payload)
+    except EmployeeTreeValidationError as error:
+        return _validation_error_response(error)
+    except Exception as error:
+        return _unexpected_error_response(error)
+
+
+@app.route("/export-missing-managers", methods=["POST"])
+def export_missing_managers():
+    try:
+        source = _resolve_input_rows(_get_payload())
+        rows = missing_manager_report(source["employee_rows"])
+        return jsonify(filename="missing-managers.csv", content_type="text/csv",
+                       content=_csv_payload(rows) if rows else "missing_manager_id,direct_reports_in_dataset,employee_ids\r\n",
+                       row_count=len(rows))
+    except EmployeeTreeValidationError as error:
+        return _validation_error_response(error)
     except Exception as error:
         return _unexpected_error_response(error)
 

@@ -48,6 +48,12 @@ Missing details remain null in the underlying data and generate a concise review
 - Missing status/explicitly blank eligibility allows viewing existing relationships with review notices but blocks assigning new reports to that person. A known inactive or ineligible manager with existing reports remains a validation error.
 - Missing department/location/level required by an existing rule produces a review notice; a proposed move requiring that missing value is blocked. Known rule and capacity violations remain errors.
 
+## Reviewing missing manager records
+
+Normal validation and editing still require a complete reporting hierarchy. The separate **Review available employees** action is offered when the only validation failures are missing manager references or a root-count mismatch. It creates a read-only display, never replacement source rows. Missing manager IDs are marked as unavailable references; separate branches appear under an **Imported workforce** display group with dashed links. Original `manager_id` values are retained on actual employee nodes and in exports. The display group does not assert a shared real manager.
+
+Review mode disables moves and version saving. Search, branch expansion, filters, the original workforce export and the missing-manager report remain available. Display groups/references are excluded from people counts. The report contains `missing_manager_id`, `direct_reports_in_dataset`, and pipe-separated `employee_ids`. Duplicate employee IDs, self-reporting, cycles, malformed fields and known policy violations still fail review. Completing the source rows and refreshing restores normal editing once strict validation passes.
+
 ## Optional Manager Constraints Dataset
 
 Use this second dataset when business rules vary by manager. One row represents rules for one manager.

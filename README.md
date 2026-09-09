@@ -33,7 +33,9 @@ Select the workforce dataset you already created in your Dataiku project. The pl
 
 Since version 2.2.0, only `employee_id` and `manager_id` columns are required to display a valid hierarchy (manager ID is blank only for the root). Missing names use `Employee <ID>`; other incomplete details show placeholders and review notices. Column casing and surrounding whitespace are accepted. Missing information required to approve a move still blocks that move. See the input specification for status, eligibility and rule behavior.
 
-To update an installed copy, upload the 2.2.0 plugin ZIP using the same plugin ID, restart the webapp backend, keep your prepared dataset selected as **Input workforce dataset**, and refresh from source. Local source changes do not update the installed DSS copy automatically.
+If some manager records are absent, version 2.3.0 offers **Review available employees** from the error message. This is a read-only view with explicit missing-manager references; source IDs are preserved and display groups are excluded from employee counts and exports. **Download missing managers** lists the records needed to complete the hierarchy. See the [2.3.0 update guide](docs/upgrade-2.3.0.md).
+
+To update an installed copy, upload the 2.3.0 plugin ZIP using the same plugin ID, restart the webapp backend, keep your prepared dataset selected as **Input workforce dataset**, and refresh from source. Local source changes do not update the installed DSS copy automatically.
 
 Reference material:
 

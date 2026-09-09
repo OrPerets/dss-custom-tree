@@ -314,3 +314,62 @@ def test_drag_preview_blocks_missing_level_required_by_target_rule(page):
     target.dispatch_event("dragover", {"dataTransfer": transfer})
     expect(target).to_have_class(re.compile("org-node--drop-invalid"))
     assert "required by the target manager's rules" in state(page, "s.state.drag.preview.message")
+
+
+def test_missing_managers_have_explicit_read_only_review_and_report(page):
+    from employee_tree import EmployeeTreeValidationError, validate_org_tree_rows
+    from employee_tree.review import build_org_tree_review_payload, missing_manager_report
+    with (ROOT / "demo/employees-demo.csv").open() as stream:
+        rows = list(csv.DictReader(stream))
+    for row in rows:
+        if row["employee_id"] in {"E005", "E009"}: row["manager_id"] = "000099"
+        if row["employee_id"] == "E014": row["manager_id"] = "000088"
+    try:
+        validate_org_tree_rows(rows)
+    except EmployeeTreeValidationError as error:
+        error_payload = dict(error.to_dict(), review_available=True)
+    review = build_org_tree_review_payload(rows)
+    output = io.StringIO()
+    report = missing_manager_report(rows)
+    writer = csv.DictWriter(output, fieldnames=list(report[0])); writer.writeheader(); writer.writerows(report)
+    page.route("**/validate-input", lambda route: route.fulfill(status=400, json=error_payload))
+    page.route("**/review-org-tree", lambda route: route.fulfill(json=review))
+    page.route("**/export-missing-managers", lambda route: route.fulfill(json={
+        "filename": "missing-managers.csv", "content_type": "text/csv", "content": output.getvalue()}))
+    page.reload()
+    expect(page.get_by_role("heading", name="Organization unavailable")).to_be_visible()
+    page.get_by_role("button", name="Review available employees").click()
+    expect(page.locator(".hierarchy-review-banner")).to_contain_text("2 missing managers")
+    expect(page.locator(".hierarchy-review-banner")).to_contain_text("3 affected employees")
+    expect(page.locator(".workspace-status")).to_have_text("Read-only review")
+    expect(page.get_by_role("button", name="Save version", exact=True)).to_be_disabled()
+    expect(page.locator(".org-node__drag-handle")).to_have_count(0)
+    page.get_by_role("combobox", name="Visible organization levels").select_option("all")
+    expect(page.locator(".org-node")).to_have_count(18)
+    expect(page.locator(".canvas-footer")).to_contain_text("15 of 15 people shown")
+    expect(page.locator(".tree-link--group")).to_have_count(3)
+    search(page, "000099")
+    page.get_by_role("button", name="Missing manager 000099, No employee row in this dataset. View employee details").click()
+    details = page.get_by_role("complementary", name="Employee details")
+    expect(details.locator(".review-note")).to_contain_text("no row in the source dataset")
+    expect(details.locator("summary", has_text="Change manager")).to_have_count(0)
+    with page.expect_download() as download:
+        page.get_by_role("button", name="Download missing managers").click()
+    with Path(download.value.path()).open() as stream:
+        exported = list(csv.DictReader(stream))
+    assert exported[1]["missing_manager_id"] == "000099"
+    assert exported[1]["employee_ids"] == "E005|E009"
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    page.screenshot(path="/tmp/org-tree-missing-manager-review.png", full_page=True)
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth")
+
+
+def test_large_validation_list_is_bounded_on_screen(page):
+    issues = [{"code": "missing_manager", "message": "Employee {0} references missing manager 9".format(i)}
+              for i in range(50)]
+    page.route("**/validate-input", lambda route: route.fulfill(status=400, json={
+        "message": "Missing manager records", "issues": issues, "review_available": True}))
+    page.reload()
+    expect(page.locator(".error-banner li")).to_have_count(10)
+    expect(page.locator(".error-banner")).to_contain_text("Showing 10 of 50 issues")

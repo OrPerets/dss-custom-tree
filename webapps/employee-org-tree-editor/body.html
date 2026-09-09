@@ -41,7 +41,7 @@
             </div>
             <span class="workspace-status" ng-if="state.mode === 'workspace'">
                 <span class="status-dot"></span>
-                {{isDirty() ? getPendingMovesLabel() : 'No unsaved changes'}}
+                {{isReviewMode() ? 'Read-only review' : (isDirty() ? getPendingMovesLabel() : 'No unsaved changes')}}
             </span>
         </header>
 
@@ -55,6 +55,17 @@
                 <ul ng-if="state.backendError.issues.length">
                     <li ng-repeat="issue in state.backendError.issues track by $index">{{issue.message || issue}}</li>
                 </ul>
+                <p ng-if="state.backendError.issueCount > state.backendError.issues.length">
+                    Showing {{state.backendError.issues.length}} of {{state.backendError.issueCount}} issues.
+                </p>
+                <div class="review-actions" ng-if="state.backendError.reviewAvailable">
+                    <button type="button" class="secondary-button" ng-click="reviewOrgTree()" ng-disabled="state.treeLoading">
+                        Review available employees
+                    </button>
+                    <button type="button" class="text-button" ng-click="exportMissingManagers()" ng-disabled="state.missingManagersExporting">
+                        Download missing managers
+                    </button>
+                </div>
             </section>
             <section class="loading-state" role="status" ng-if="state.mode === 'loading'">
                 <span class="loading-indicator"></span>
@@ -70,6 +81,16 @@
             </section>
 
             <section class="workspace" ng-if="state.mode === 'workspace'" aria-label="Organization workspace">
+                <div class="hierarchy-review-banner" role="status" ng-if="isReviewMode()">
+                    <div>
+                        <strong>Read-only review</strong> · {{state.treePayload.meta.missing_manager_count}} missing managers ·
+                        {{state.treePayload.meta.affected_employee_count}} affected employees.
+                        <span>Dashed links group separate branches for display. Editing is disabled until source links are complete.</span>
+                    </div>
+                    <button type="button" class="text-button" ng-click="exportMissingManagers()" ng-disabled="state.missingManagersExporting">
+                        Download missing managers
+                    </button>
+                </div>
                 <div class="workspace-heading">
                     <div class="heading-context">
                         <h1>Organization</h1>
@@ -217,8 +238,8 @@
                             type="button"
                             class="primary-button"
                             ng-click="saveSnapshot()"
-                            ng-disabled="state.snapshotSaving || !canUseSnapshotStorage() || state.moveSubmitting"
-                            title="{{canUseSnapshotStorage() ? 'Save the current organization as a version' : 'Configure a baseline folder in webapp settings to save versions'}}"
+                            ng-disabled="isReviewMode() || state.snapshotSaving || !canUseSnapshotStorage() || state.moveSubmitting"
+                            title="{{isReviewMode() ? 'Complete the reporting links before saving a version' : (canUseSnapshotStorage() ? 'Save the current organization as a version' : 'Configure a baseline folder in webapp settings to save versions')}}"
                         >
                             {{state.snapshotSaving ? 'Saving…' : 'Save version'}}
                         </button>
@@ -411,6 +432,7 @@
                                     >
                                         <path
                                             class="tree-link"
+                                            ng-class="{'tree-link--group': link.displayOnly}"
                                             ng-repeat="link in state.diagram.links track by link.key"
                                             ng-attr-d="{{link.path}}"
                                         ></path>
@@ -445,7 +467,7 @@
                                                 </span>
                                             </span>
                                             <span class="org-node__department">
-                                                {{renderNode.data.department || 'Department not provided'}}
+                                                {{renderNode.data.display_only ? 'Display reference' : (renderNode.data.department || 'Department not provided')}}
                                                 <span
                                                     class="node-warning"
                                                     ng-if="renderNode.data.warnings.length"
@@ -471,9 +493,8 @@
                                                 ng-attr-aria-label="{{state.ui.collapsedNodes[renderNode.employee_id] ? 'Show' : 'Hide'}} direct reports of {{renderNode.data.full_name}}"
                                             >
                                                 <span>
-                                                    {{renderNode.data.direct_reports_count}} direct
-                                                    {{renderNode.data.direct_reports_count === 1 ? 'report' :
-                                                    'reports'}}
+                                                    {{renderNode.data.direct_reports_count}}
+                                                    {{renderNode.data.is_virtual_root ? 'review groups' : (renderNode.data.direct_reports_count === 1 ? 'direct report' : 'direct reports')}}
                                                 </span>
                                                 <svg
                                                     class="icon"
@@ -489,7 +510,7 @@
                                         </div>
                                         <span
                                             class="org-node__drag-handle"
-                                            ng-if="renderNode.data.manager_id"
+                                            ng-if="renderNode.data.manager_id && !isReviewMode()"
                                             org-drag-handle
                                             employee-id="renderNode.employee_id"
                                             title="Drag to a new manager. You can also use Change manager in employee details."
@@ -538,7 +559,7 @@
                             aria-label="Employee details"
                         >
                             <div class="panel-heading">
-                                <p class="section-label">Employee details</p>
+                                <p class="section-label">{{state.selectedNode.display_only ? 'Display reference' : 'Employee details'}}</p>
                                 <button
                                     type="button"
                                     class="icon-button"
@@ -554,7 +575,7 @@
                                 </span>
                                 <h2>{{state.selectedNode.full_name}}</h2>
                                 <p>{{state.selectedNode.job_title || 'Role not provided'}}</p>
-                                <span class="status-pill" ng-class="getStatusTone(state.selectedNode)">
+                                <span class="status-pill" ng-class="getStatusTone(state.selectedNode)" ng-if="!state.selectedNode.display_only">
                                     {{state.selectedNode.employment_status || 'Status not provided'}}
                                 </span>
                             </div>
@@ -572,7 +593,7 @@
                                     <dd>{{state.selectedNode.location || 'Not provided'}}</dd>
                                 </div>
                                 <div>
-                                    <dt>Direct reports</dt>
+                                    <dt>{{state.selectedNode.is_virtual_root ? 'Review groups' : 'Direct reports'}}</dt>
                                     <dd>
                                         {{state.selectedNode.direct_reports_count}}
                                         <span ng-if="state.selectedNode.max_direct_reports != null">
@@ -589,7 +610,7 @@
                                     </li>
                                 </ul>
                             </div>
-                            <details class="details-section">
+                            <details class="details-section" ng-if="!state.selectedNode.is_virtual_root">
                                 <summary>Employee information</summary>
                                 <dl class="details-grid">
                                     <div>
@@ -628,7 +649,7 @@
                                     </li>
                                 </ul>
                             </details>
-                            <details class="details-section" ng-if="state.selectedNode.manager_id">
+                            <details class="details-section" ng-if="state.selectedNode.manager_id && !isReviewMode()">
                                 <summary>Change manager</summary>
                                 <p>The employee’s team will move with them.</p>
                                 <label class="field">

@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 2.3.0 (2026-09-09)
+* Added an explicit read-only review for missing manager records and multiple reporting roots, with marked display references and dashed grouping links.
+* Added a missing-manager CSV report with affected employee IDs and direct-report counts. Source IDs and exported workforce rows remain unchanged.
+* Disabled moves and version saving in incomplete-hierarchy review; strict validation remains active for editing and persistence. Duplicate IDs and cycles still block review.
+* Summarized missing-reference errors and limited on-screen error examples to ten. Review groups open collapsed, and search can find employees by manager ID.
+
 ## Version 2.2.0 (2026-09-09)
 * Load prepared Dataiku datasets with missing employee names, titles, departments, locations, levels or statuses. Missing names display as Employee followed by the ID; other absent details show explicit placeholders and review notices.
 * Accept column names regardless of casing and outer whitespace, including move replay and export. Keep employee IDs, reporting links, duplicate columns and cycles strict.
